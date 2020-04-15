@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Death </title>
+</head>
+<body>
+{% if latest_list %}
+    <ul>
+        {% for p in latest_list %}
+            <p>
+            <li>{{ p.name }} <br> {{ p.note }} <br>
+                {{ p.author.name }} <br> {{ p.author.note }} <br>
+                <br> {{ p.museum.name }}
+            </li></p>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No pictures are available.</p>
+{% endif %}
+</body>
+</html>

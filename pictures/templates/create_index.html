@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search</title>
+</head>
+<body>
+
+{% if latest_list %}
+    <ul>
+        {% for a in latest_list %}
+            <li>{{ a }} </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Nothing available.</p>
+{% endif %}
+
+</body>
+</html>

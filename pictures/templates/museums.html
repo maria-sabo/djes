@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Museums</title>
+</head>
+<body>
+{% if latest_museums_list %}
+    <ul>
+        {% for m in latest_museums_list %}
+            <li>{{ m.name }} {{ m.country }} {{ m.city }} {{ m.yearfoundation }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No museums are available.</p>
+{% endif %}
+</body>
+</html>

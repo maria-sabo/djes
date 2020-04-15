@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Pictures </title>
+</head>
+<body>
+<form action="create_filter_for_pic">
+    <td>
+        <b>Что поищем?</b> <br>
+        <input type="text" size="20" name="search_text">
+        <input type="submit" value="Выполнить поиск" name="perform_search">
+    </td>
+</form>
+<form action="create_index_for_pic">
+    <td>
+        <input type="text" size="20" name="search_text">
+        <input type="submit" value="Выполнить поиск ES" name="perform_search_es">
+    </td>
+</form>
+{% if latest_pictures_list %}
+    <ul>
+        {% for p in latest_pictures_list %}
+            <p>
+            <li>{{ p.name }} <br> {{ p.note }} <br>
+                {{ p.author.name }} <br> {{ p.author.note }} <br>
+                <br> {{ p.museum.name }}
+            </li></p>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No pictures are available.</p>
+{% endif %}
+</body>
+</html>
