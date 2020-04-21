@@ -46,7 +46,6 @@ def create_index(request):
     es = Elasticsearch(hosts)
     index_name = 'i_pictures'
 
-    # ask
     if es.indices.exists(index=index_name):
         es.indices.delete(index=index_name)
     es.indices.create(index=index_name)
@@ -68,8 +67,7 @@ def create_filter_for_pic(request):
 
     received_text = request.GET.get('search_text')
     print(received_text)
-    for pic in latest_list:
-        latest_list = latest_list.filter(name__contains=received_text)
+    latest_list = latest_list.filter(name__contains=received_text)
     return render(request, 'create_filter_for_pic.html', {'latest_list': latest_list})
 
 
