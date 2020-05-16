@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<h1>{{ author.name }}</h1>
-<ul>
-    {% for auth in author.name %}
-        <li>{{ auth }}</li>
-    {% endfor %}
-</ul>
-<body>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %} Author {% endblock %}
+{% block content %}
+    <h1>{{ author.name }}</h1>
+    <p>{{ author.note }}</p>
+{% endblock %}

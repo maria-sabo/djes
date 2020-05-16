@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Search </title>
+</head>
+<body>
+{% if res %}
+    <ul>
+        {% for p in res %}
+            <p>
+            <li>
+                <strong>{{ 'Name: ' }}</strong>{{ p.name }} <br>
+                <strong>{{ 'About picture: ' }}</strong>{{ p.note }} <br> <br>
+                <strong>{{ 'Author: ' }}</strong>{{ p.author.name }} <br>
+                <strong>{{ 'About author: ' }}</strong>{{ p.author.note }} <br> <br>
+                <strong>{{ 'Museum: ' }}</strong>{{ p.museum.name }}
+            </li></p>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No pictures are available.</p>
+{% endif %}
+</body>
+</html>

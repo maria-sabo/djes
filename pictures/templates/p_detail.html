@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<h1>{{ picture.name }}</h1>
-<ul>
-    {% for pic in picture.name %}
-        <li>{{ pic }}</li>
-    {% endfor %}
-</ul>
-<body>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %} Picture {% endblock %}
+{% block content %}
+    <h1>{{ picture.name }}</h1>
+    <p>{{ picture.note }}</p>
+{% endblock %}

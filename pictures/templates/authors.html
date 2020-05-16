@@ -1,19 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Authors</title>
-</head>
-<body>
-{% if latest_authors_list %}
-    <ul>
-        {% for a in latest_authors_list %}
-            <li>{{ a.name }} {{ a.datebirth }} {{ a.datedeath }} {{ a.countrybirth }}</li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No authors are available.</p>
-{% endif %}
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %} Authors {% endblock %}
+{% block content %}
+    {% if authors_list %}
+        <ul>
+            {% for a in authors_list %}
+                <li>{{ a.name }} {{ a.datebirth }} {{ a.datedeath }} {{ a.countrybirth }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No authors are available.</p>
+    {% endif %}
+{% endblock %}

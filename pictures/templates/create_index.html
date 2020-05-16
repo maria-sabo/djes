@@ -1,20 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Search</title>
-</head>
-<body>
-
-{% if latest_list %}
-    <ul>
-        {% for a in latest_list %}
-            <li>{{ a }} </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Nothing available.</p>
-{% endif %}
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %} Index {% endblock %}
+{% block content %}
+    <h1> Indices </h1>
+    {% if latest_list %}
+        <ul>
+            {% for key, value in latest_list.items %}
+                <li>{{ key }} {{ value }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nothing available.</p>
+    {% endif %}
+{% endblock %}
