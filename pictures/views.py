@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
 
 from es_model.esmodel import EsModel
+from esf_model.esfmodel import EsfModel
 from pictures.for_es import es_client
 from pictures.models import Picture, Author, Museum
 
@@ -42,15 +43,15 @@ def m_detail(request, museum_id):
 
 
 def create_index_flag_mapping(request):
-    EsModel.create_indices(True)
-    res = EsModel.put_documents()
+    EsfModel.create_indices(True)
+    res = EsfModel.put_documents()
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def create_index_flag(request):
-    EsModel.create_indices(False)
-    res = EsModel.put_documents()
+    EsfModel.create_indices(False)
+    res = EsfModel.put_documents()
     messages.info(request, str(res))
     return redirect('/pictures/')
 

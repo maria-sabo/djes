@@ -1,26 +1,19 @@
+import base64
 import datetime
+import decimal
 import json
 from django.db.models import Model, ManyToManyField, QuerySet
-from django.db.models import TextField
+
 from django.db.models import ManyToOneRel
 from django.contrib.contenttypes.models import ContentType
 import django.db.models.options as options
 from django.db.models.base import ModelBase
 from django.apps import apps
+from django.db.models.fields.files import FieldFile, ImageFieldFile
 
 from pictures.for_es import es_client
 
 options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_mapping', 'es_path', 'mappings')
-
-
-class EsTextField(TextField):
-    es_index = {}
-
-    def __init__(self, es_index=None, **kwargs):
-        if es_index is None:
-            es_index = {}
-        self.es_index = es_index
-        super().__init__(**kwargs)
 
 
 def get_model_from_name(name):
@@ -82,27 +75,30 @@ class EsModel(Model):
         if hasattr(model_start._meta, "es_mapping"):
             mapping = model_start.get_es_mapping()
             fields = self._meta.get_fields()
-            for field in fields:
-                mapping_field = mapping.get(self.get_es_path() + field.name)
-                if mapping_field is not None:
-                    if not isinstance(field, ManyToOneRel):
-                        if not isinstance(field, ManyToManyField):
-                            o = getattr(self, field.name)
-                            if hasattr(o, "_meta") and hasattr(o._meta, "es_path"):
-                                o.set_es_path(self.get_es_path() + field.name + ".")
-                            if isinstance(o, datetime.datetime) or isinstance(o, datetime.date):
-                                format = mapping_field.get("format")
-                                if format is not None:
-                                    o = o.strftime(iso2python(format))
+            for key in mapping:
+                mapping_field = mapping[key]
+                for field in fields:
+                    if key == self.get_es_path() + field.name:
+                        # mapping_field = mapping.get(self.get_es_path() + field.name)
+                        if mapping_field is not None:
+                            if not isinstance(field, ManyToOneRel):
+                                if not isinstance(field, ManyToManyField):
+                                    o = getattr(self, field.name)
+                                    if hasattr(o, "_meta") and hasattr(o._meta, "es_path"):
+                                        o.set_es_path(self.get_es_path() + field.name + ".")
+                                    if isinstance(o, (datetime.date, datetime.datetime)):
+                                        o = o.isoformat()
+                                    if isinstance(o, memoryview):
+                                        o = str(base64.encodebytes(o))
+                                    if isinstance(o, (
+                                    datetime.timedelta, datetime.time, decimal.Decimal, FieldFile, ImageFieldFile)):
+                                        o = str(o)
                                 else:
-                                    o = o.isoformat()
-                        else:
-                            o = field.related_model.objects.all()
-                            for el in o:
-                                if hasattr(el._meta, "es_path"):
-                                    el.set_es_path(self.get_es_path() + field.name + ".")
-
-                        d.update({str(field.name): o})
+                                    o = field.related_model.objects.all()
+                                    for el in o:
+                                        if hasattr(el._meta, "es_path"):
+                                            el.set_es_path(self.get_es_path() + field.name + ".")
+                                d.update({str(field.name): o})
         return d
 
     class ComplexEncoder(json.JSONEncoder):
@@ -130,16 +126,19 @@ class EsModel(Model):
             if hasattr(model_start._meta, "es_mapping"):
                 mapping_es = model_start.get_es_mapping()
                 fields = obj._meta.get_fields()
-                for field in fields:
-                    mapping_field = mapping_es.get(obj.get_es_path() + field.name)
-                    if mapping_field is not None:
-                        if not isinstance(field, ManyToOneRel):
-                            if field.related_model is not None:
-                                ml = field.related_model
-                                mapping_field.update({"properties": ml})
-                                if hasattr(ml._meta, "es_path"):
-                                    ml.set_es_path(obj.get_es_path() + field.name + ".")
-                            d.update({str(field.name): mapping_field})
+                for key in mapping_es:
+                    mapping_field = mapping_es[key]
+                    for field in fields:
+                        # mapping_field = mapping_es.get(obj.get_es_path() + field.name)
+                        if key == obj.get_es_path() + field.name:
+                            if mapping_field is not None:
+                                if not isinstance(field, ManyToOneRel):
+                                    if field.related_model is not None:
+                                        ml = field.related_model
+                                        mapping_field.update({"properties": ml})
+                                        if hasattr(ml._meta, "es_path"):
+                                            ml.set_es_path(obj.get_es_path() + field.name + ".")
+                                    d.update({str(field.name): mapping_field})
         else:
             d = obj
         return d
@@ -202,17 +201,3 @@ class EsModel(Model):
             for obj in model.objects.all():
                 res.append(EsModel.put_document(obj))
         return res
-
-
-def iso2python(format):
-    f = format
-    f = f.replace("YYYY", "%Y")
-    f = f.replace("YYYY", "%Y")
-    f = f.replace("yyyy", "%Y")
-    f = f.replace("YY", "%y")
-    f = f.replace("yy", "%y")
-    f = f.replace("MM", "%m")
-    f = f.replace("mm", "%m")
-    f = f.replace("DD", "%d")
-    f = f.replace("dd", "%d")
-    return f
