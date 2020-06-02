@@ -5,41 +5,67 @@
     <p><a href="pictures"> Pictures </a></p>
     <p><a href="authors"> Authors </a></p>
     <p><a href="museums"> Museums </a></p>
+    <style>
+        .b1 {
+            float: left;
+            font-size: 14px;
+            width: 370px;
+        }
+
+        .t1 {
+
+        }
+    </style>
     <table>
         <form action="create_index_flag">
             <td>
-                <input type="submit" value="Create index by flags">
+                <input type="submit" value="Create index by flags" class="b1">
             </td>
         </form>
-        <form action="create_index_flag_mapping">
+        <form action="create_index_flag_f">
             <td>
-                <input type="submit" value="Create index with mapping by flags">
-            </td>
-        </form>
-
-        <form action="delete_index" method="get">
-            <td>
-                <input type="submit" value="Delete index">
-            </td>
-
-            {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}
-                        {% if message.tags %} class="{{ message.tags }}"{% endif %}{{ message }}
-                    {% endfor %}
-                </ul>
-            {% endif %}
-
-        </form>
-        <form action="show_index">
-            <td>
-                <input type="submit" value="Show index">
-            </td>
-        </form>
-    <form action="show_mapping">
-            <td>
-                <input type="submit" value="Show mapping">
+                <input type="submit" value="Create index by flags in fields" class="b1">
             </td>
         </form>
     </table>
+    <table>
+        <form action="create_index_flag_mapping">
+            <td>
+                <input type="submit" value="Create index with mapping by flags" class="b1">
+            </td>
+        </form>
+        <form action="create_index_flag_mapping_f">
+            <td>
+                <input type="submit" value="Create index with mapping by flags in fields" class="b1">
+            </td>
+        </form>
+    </table>
+    <br>
+
+    <form action="delete_index" method="get">
+        <td>
+            <input type="submit" value="Delete index" class="b1">
+        </td>
+    </form><br><br>
+    <form action="show_index">
+        <td>
+            <input type="submit" value="Show index" class="b1">
+        </td>
+    </form><br><br>
+    <form action="show_mapping">
+        <td>
+            <input type="submit" value="Show mapping" class="b1">
+        </td>
+    </form><br><br>
+    <form action="show_log">
+        <td>
+            <input type="submit" value="Show log file" class="b1">
+        </td>
+    </form> <br><br>
+    <form><textarea cols=100 rows="12">
+        {% if messages %}
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        {% endif %}</textarea></form>
 {% endblock %}

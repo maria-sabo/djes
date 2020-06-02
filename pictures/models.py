@@ -4,25 +4,74 @@ from django.db import models
 from django.db.models import Model
 
 from es_model.esmodel import EsModel
-from esf_model.esfmodel import EsfModel, EsTextField, EsForeignKey
+from esf_model.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
+    EsBinaryField, EsBooleanField, EsCharField, EsDateField, EsDateTimeField, EsDecimalField, EsDurationField, \
+    EsEmailField, EsFilePathField, EsFloatField, EsIntegerField, EsUUIDField, EsURLField, EsTimeField, \
+    EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \
+    EsFileField, EsImageField, EsGenericIPAddressField, EsOneToOneField, EsManyToManyField
 
 
 class TestFk(EsfModel):
-    text = EsTextField(es_index={"index1": {"type": "keyword"}, "index2": {"type": "keyword"}})
-
-    # class Meta:
-    #     es_indexes = [{"index_name": "index1", "doc_type": "doctype1"},
-    #                   {"index_name": "index2", "doc_type": "doctype2"}]
+    text = EsTextField(es_index=True, es_map={'type': 'text'})
 
 
 class TestModel(EsfModel):
-    name = EsTextField(es_index={"index1": {"type": "text"}})
+    name = EsTextField(es_index=True, es_map={'type': 'text'})
     fk = EsForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None,
-                      es_index={"index1": {"type": "object"}})
+                      es_index=True, es_map={'type': 'object'})
 
     class Meta:
-        es_indexes = [{"index_name": "index1", "doc_type": "doctype1"},
-                      {"index_name": "index2", "doc_type": "doctype2"}]
+        es_index_name = "index_tm"
+        es_doc_type = "doc_type_tm"
+
+
+class Author2(EsfModel):
+    name = EsTextField(es_index=True, es_map={'type': 'keyword'})
+    date_birth = EsDateField(es_index=True, es_map={'type': 'text'})
+    date_death = EsDateField(es_index=True, es_map={'type': 'text'})
+    country_birth = EsTextField(es_index=True, es_map={'type': 'text'})
+    note = EsCharField(default='', max_length=10000, es_index=True, es_map={'type': 'text'})
+
+    # рассмотрение всех полей
+
+    field_big_int = EsBigIntegerField(null=True, blank=True, default=None,
+                                      es_index=True, es_map={'type': 'long'})
+    field_bin = EsBinaryField(null=True, blank=True, default=None,
+                              es_index=True, es_map={'type': 'binary'})
+    field_null_boolean = EsNullBooleanField(null=True, blank=True, default=None,
+                                            es_index=True, es_map={'type': 'boolean'})
+    field_datetime = EsDateTimeField(null=True, blank=True, default=None,
+                                     es_index=True, es_map={'type': 'date'})
+    field_decimal = EsDecimalField(null=True, blank=True, default=None, max_digits=10, decimal_places=2,
+                                   es_index=True, es_map={'type': 'float'})
+    field_duration = EsDurationField(null=True, blank=True, default=None,
+                                     es_index=True, es_map={'type': 'text'})
+    field_email = EsEmailField(null=True, blank=True, default=None,
+                               es_index=True, es_map={'type': 'text'})
+    field_file = EsFileField(default=None, blank=True, null=True, es_index=True, es_map={'type': 'text'})
+    field_filepath = EsFilePathField(null=True, blank=True, default=None,
+                                     es_index=True, es_map={'type': 'text'})
+    field_float = EsFloatField(null=True, blank=True, default=None,
+                               es_index=True, es_map={'type': 'float'})
+    field_image = EsImageField(default=None, blank=True, null=True,
+                               es_index=True, es_map={'type': 'text'})
+    field_generic_ip = EsGenericIPAddressField(default=None, blank=True, null=True,
+                                               es_index=True, es_map={'type': 'text'})
+    field_positive_int = EsPositiveIntegerField(null=True, blank=True, default=None,
+                                                es_index=True, es_map={'type': 'integer'})
+    field_positive_small_int = EsPositiveSmallIntegerField(null=True, blank=True, default=None,
+                                                           es_index=True, es_map={'type': 'short'})
+    field_slug = EsSlugField(null=True, blank=True, default=None, es_index=True, es_map={'type': 'text'})
+    field_small_int = EsSmallIntegerField(null=True, blank=True, default=None,
+                                          es_index=True, es_map={'type': 'short'})
+    field_time = EsTimeField(null=True, blank=True, default=None, es_index=True, es_map={'type': 'text'})
+    field_url = EsURLField(null=True, blank=True, default=None, es_index=True, es_map={'type': 'text'})
+    field_uuid = EsUUIDField(null=True, blank=True, default=uuid.uuid4, editable=False,
+                             es_index=True, es_map={'type': 'text'})
+
+    class Meta:
+        es_index_name = "index_with_new_fields2"
+        es_doc_type = "type_with_new_fields2"
 
 
 class Author(EsModel):
@@ -34,9 +83,9 @@ class Author(EsModel):
 
     # рассмотрение всех полей
 
-    field_bigInt = models.BigIntegerField(null=True, blank=True, default=None)
+    field_big_int = models.BigIntegerField(null=True, blank=True, default=None)
     field_bin = models.BinaryField(null=True, blank=True, default=None)
-    field_nullBoolean = models.NullBooleanField(null=True, blank=True, default=None)
+    field_null_boolean = models.NullBooleanField(null=True, blank=True, default=None)
     field_datetime = models.DateTimeField(null=True, blank=True, default=None)
     field_decimal = models.DecimalField(null=True, blank=True, default=None, max_digits=10, decimal_places=2)
     field_duration = models.DurationField(null=True, blank=True, default=None)
@@ -45,11 +94,11 @@ class Author(EsModel):
     field_filepath = models.FilePathField(null=True, blank=True, default=None)
     field_float = models.FloatField(null=True, blank=True, default=None)
     field_image = models.ImageField(default=None, blank=True, null=True)
-    field_genericIP = models.GenericIPAddressField(default=None, blank=True, null=True)
-    field_positiveInt = models.PositiveIntegerField(null=True, blank=True, default=None)
-    field_positiveSmallInt = models.PositiveSmallIntegerField(null=True, blank=True, default=None)
+    field_generic_ip = models.GenericIPAddressField(default=None, blank=True, null=True)
+    field_positive_int = models.PositiveIntegerField(null=True, blank=True, default=None)
+    field_positive_small_int = models.PositiveSmallIntegerField(null=True, blank=True, default=None)
     field_slug = models.SlugField(null=True, blank=True, default=None)
-    field_smallInt = models.SmallIntegerField(null=True, blank=True, default=None)
+    field_small_int = models.SmallIntegerField(null=True, blank=True, default=None)
     field_time = models.TimeField(null=True, blank=True, default=None)
     field_url = models.URLField(null=True, blank=True, default=None)
     field_uuid = models.UUIDField(null=True, blank=True, default=uuid.uuid4, editable=False)
@@ -62,7 +111,7 @@ class Author(EsModel):
                 "es_mapping": {
                     "author.name": {"type": "keyword"},
                     "author.country_birth": {"type": "text"},
-                    # "author.date_birth": {"type": "text", "format": "YYYY:MM"},
+                    "author.date_birth": {"type": "text"},
                     "author.date_death": {"type": "text"},
                     "author.note": {"type": "text"},
                 },
@@ -71,20 +120,20 @@ class Author(EsModel):
                 "es_index_name": "index_with_new_fields",
                 "es_doc_type": "type_with_new_fields",
                 "es_mapping": {
-                    "author.field_bigInt": {"type": "long"},
+                    "author.field_big_int": {"type": "long"},
                     "author.field_bin": {"type": "binary"},
-                    "author.field_nullBoolean": {"type": "boolean"},
-                    "author.field_datetime": {"type": "date", "format": "year"},
+                    "author.field_null_boolean": {"type": "boolean"},
+                    "author.field_datetime": {"type": "date"},
                     "author.field_decimal": {"type": "float"},
                     "author.field_duration": {"type": "text"},
                     "author.field_email": {"type": "text"},
                     "author.field_filepath": {"type": "text"},
                     "author.field_float": {"type": "float"},
-                    "author.field_genericIP": {"type": "text"},
-                    "author.field_positiveInt": {"type": "integer"},
-                    "author.field_positiveSmallInt": {"type": "short"},
+                    "author.field_generic_ip": {"type": "text"},
+                    "author.field_positive_int": {"type": "integer"},
+                    "author.field_positive_small_int": {"type": "short"},
                     "author.field_slug": {"type": "text"},
-                    "author.field_smallInt": {"type": "short"},
+                    "author.field_small_int": {"type": "short"},
                     "author.field_time": {"type": "text"},
                     "author.field_url": {"type": "text"},
                     "author.field_uuid": {"type": "text"},
@@ -95,11 +144,28 @@ class Author(EsModel):
         ]
 
 
+class Address2(EsfModel):
+    country = EsTextField()
+    city = EsTextField()
+    street = EsTextField()
+    house = EsTextField()
+
+
 class Address(EsModel):
     country = models.TextField()
     city = models.TextField()
     street = models.TextField()
     house = models.TextField()
+
+
+class Person2(EsfModel):
+    name = EsTextField(es_index=True, es_map={'type': 'text'})
+    address = EsForeignKey(Address2, on_delete=models.CASCADE, null=True, blank=True, default=None,
+                           es_index=True, es_map={'type': 'object'})
+
+    class Meta:
+        es_index_name = "i_person2"
+        es_doc_type = "t_person2"
 
 
 class Person(EsModel):
@@ -128,6 +194,20 @@ class Person(EsModel):
                 },
             },
         ]
+
+
+class Museum2(EsfModel):
+    name = EsTextField(es_index=True)
+    address = EsForeignKey(Address2, on_delete=models.CASCADE, null=True, blank=True, default=None,
+                           es_index=True, es_map={'type': 'object'})
+    year_foundation = EsIntegerField(es_index=True, es_map={'type': 'integer'})
+    note = EsTextField(default='', es_index=True, es_map={'type': 'text'})
+    persona = EsOneToOneField(Person2, on_delete=models.CASCADE, null=True, blank=True, default=None,
+                              es_index=True, es_map={'type': 'object'})
+
+    class Meta:
+        es_index_name = "i_museum2"
+        es_doc_type = "t_museum2"
 
 
 class Museum(EsModel):
@@ -165,6 +245,21 @@ class Museum(EsModel):
                 },
             },
         ]
+
+
+class Picture2(EsfModel):
+    name = EsTextField(es_index=True, es_map={'type': 'text'})
+    auth = EsForeignKey(Author2, on_delete=models.CASCADE, es_index=True, es_map={'type': 'object'})
+    museum = EsForeignKey(Museum2, on_delete=models.CASCADE, es_index=True, es_map={'type': 'object'})
+    persons = EsManyToManyField(Person2, null=True, blank=True, default=None,
+                                es_index=True, es_map={'type': 'object'})
+    note = EsTextField(default='', es_index=True, es_map={'type': 'text'})
+    addr = EsForeignKey(Address2, on_delete=models.CASCADE, null=True, blank=True, default=None,
+                        es_index=True, es_map={'type': 'object'})
+
+    class Meta:
+        es_index_name = "i_picture2"
+        es_doc_type = "t_picture2"
 
 
 class Picture(EsModel):

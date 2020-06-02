@@ -2,6 +2,8 @@ import base64
 import datetime
 import decimal
 import json
+import logging
+
 from django.db.models import Model, ManyToManyField, QuerySet
 
 from django.db.models import ManyToOneRel
@@ -10,15 +12,29 @@ import django.db.models.options as options
 from django.db.models.base import ModelBase
 from django.apps import apps
 from django.db.models.fields.files import FieldFile, ImageFieldFile
-
-from pictures.for_es import es_client
+from elasticsearch import Elasticsearch
 
 options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_mapping', 'es_path', 'mappings')
+logging.basicConfig(filename="log-file.log", level=logging.INFO)
 
 
 def get_model_from_name(name):
     ct = ContentType.objects.get(model=name)
     return ct.model_class()
+
+
+def connect_es():
+    _es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+    try:
+        if _es.ping():
+            logging.info('Connect ES')
+            return _es
+        else:
+            logging.error('Cannot connect ES')
+            raise SystemExit
+    except Exception:
+        logging.error('Error')
+        raise SystemExit
 
 
 class EsModel(Model):
@@ -29,20 +45,8 @@ class EsModel(Model):
         mappings = []
 
     @classmethod
-    def get_es_index_name(cls):
-        return cls._meta.es_index_name
-
-    @classmethod
-    def set_es_index_name(cls, es_index_name):
-        cls._meta.es_index_name = es_index_name
-
-    @classmethod
-    def get_es_doc_type(cls):
-        return cls._meta.es_doc_type
-
-    @classmethod
-    def set_es_doc_type(cls, es_doc_type):
-        cls._meta.es_index_name = es_doc_type
+    def get_mappings(cls):
+        return cls._meta.mappings
 
     @classmethod
     def get_es_mapping(cls):
@@ -79,7 +83,6 @@ class EsModel(Model):
                 mapping_field = mapping[key]
                 for field in fields:
                     if key == self.get_es_path() + field.name:
-                        # mapping_field = mapping.get(self.get_es_path() + field.name)
                         if mapping_field is not None:
                             if not isinstance(field, ManyToOneRel):
                                 if not isinstance(field, ManyToManyField):
@@ -91,7 +94,8 @@ class EsModel(Model):
                                     if isinstance(o, memoryview):
                                         o = str(base64.encodebytes(o))
                                     if isinstance(o, (
-                                    datetime.timedelta, datetime.time, decimal.Decimal, FieldFile, ImageFieldFile)):
+                                            datetime.timedelta, datetime.time, decimal.Decimal, FieldFile,
+                                            ImageFieldFile)):
                                         o = str(o)
                                 else:
                                     o = field.related_model.objects.all()
@@ -129,7 +133,6 @@ class EsModel(Model):
                 for key in mapping_es:
                     mapping_field = mapping_es[key]
                     for field in fields:
-                        # mapping_field = mapping_es.get(obj.get_es_path() + field.name)
                         if key == obj.get_es_path() + field.name:
                             if mapping_field is not None:
                                 if not isinstance(field, ManyToOneRel):
@@ -152,11 +155,9 @@ class EsModel(Model):
             return json.JSONEncoder.default(self, obj)
 
     @staticmethod
-    def create_indices_for_model(model, with_mapping):
-        es = es_client(['localhost'])
-        res = []
+    def create_indices_for_model(model, with_mapping, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
-            mappings = model._meta.mappings
+            mappings = model.get_mappings()
             for m in mappings:
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
@@ -176,28 +177,26 @@ class EsModel(Model):
 
     @staticmethod
     def create_indices(with_mapping):
-        for model in apps.get_app_config('pictures').get_models():
-            EsModel.create_indices_for_model(model, with_mapping)
-
-    @staticmethod
-    def put_document(obj):
-        es = es_client(['localhost'])
+        es = connect_es()
         res = []
-        obj_model = obj._meta.model
-        mappings = obj_model._meta.mappings
-        for m in mappings:
-            index_name = m.get('es_index_name')
-            doc_type = m.get('es_doc_type')
-            if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                obj_model._meta.es_mapping = m.get("es_mapping")
-                json_obj = obj.obj2es()
-                res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
+        for model in apps.get_models():
+            if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
+                EsModel.create_indices_for_model(model, with_mapping, es)
+                for obj in model.objects.all():
+                    res.append(EsModel.put_document(obj, es))
         return res
 
     @staticmethod
-    def put_documents():
+    def put_document(obj, es):
         res = []
-        for model in apps.get_app_config('pictures').get_models():
-            for obj in model.objects.all():
-                res.append(EsModel.put_document(obj))
+        obj_model = obj._meta.model
+        if hasattr(obj_model, "_meta") and hasattr(obj_model._meta, "mappings"):
+            mappings = obj_model.get_mappings()
+            for m in mappings:
+                index_name = m.get('es_index_name')
+                doc_type = m.get('es_doc_type')
+                if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
+                    obj_model._meta.es_mapping = m.get("es_mapping")
+                    json_obj = obj.obj2es()
+                    res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
         return res

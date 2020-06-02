@@ -2,35 +2,144 @@ import base64
 import datetime
 import decimal
 import json
+import logging
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model, Field, TextField, QuerySet, ManyToOneRel, ManyToManyField, ForeignKey
+from django.db.models import Model, Field, TextField, QuerySet, ManyToOneRel, ManyToManyField, ForeignKey, \
+    BigIntegerField, BinaryField, BooleanField, CharField, DateField, DateTimeField, DecimalField, DurationField, \
+    EmailField, FilePathField, FloatField, IntegerField, UUIDField, URLField, TimeField, SmallIntegerField, SlugField, \
+    PositiveSmallIntegerField, PositiveIntegerField, NullBooleanField, FileField, ImageField, GenericIPAddressField, \
+    OneToOneField
 import django.db.models.options as options
 from django.db.models.base import ModelBase
-from django.db.models.fields.files import FieldFile, ImageFieldFile
 
 from django.apps import apps
-from pictures.for_es import es_client
+from django.db.models.fields.files import FieldFile, ImageFieldFile
+from elasticsearch import Elasticsearch
 
-options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_index_name', 'es_indexes')
+options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_index_name', 'es_doc_type')
 
-
-class EsTextField(TextField):
-    es_index = {}
-
-    def __init__(self, *args, **kwargs):
-        if kwargs.keys().__contains__("es_index"):
-            self.es_index = kwargs.pop('es_index')
-        super(EsTextField, self).__init__(*args, **kwargs)
+logging.basicConfig(filename="log-file.log", level=logging.INFO)
 
 
-class EsForeignKey(ForeignKey):
-    es_index = {}
+class EsField:
+    es_index = True
+    es_map = {}
 
     def __init__(self, *args, **kwargs):
-        if kwargs.keys().__contains__("es_index"):
+        if kwargs.keys().__contains__('es_index'):
             self.es_index = kwargs.pop('es_index')
-        super(EsForeignKey, self).__init__(*args, **kwargs)
+        if kwargs.keys().__contains__('es_map'):
+            self.es_map = kwargs.pop('es_map')
+        super(EsField, self).__init__(*args, **kwargs)
+
+
+class EsTextField(EsField, TextField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsBigIntegerField(EsField, BigIntegerField):
+    es_map = {"type": "long"}
+
+
+class EsBinaryField(EsField, BinaryField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsBooleanField(EsField, BooleanField):
+    es_map = {"type": "boolean"}
+
+
+class EsCharField(EsField, CharField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsDateField(EsField, DateField):
+    es_map = {"type": "date"}
+
+
+class EsDateTimeField(EsField, DateTimeField):
+    es_map = {"type": "date"}
+
+
+class EsDecimalField(EsField, DecimalField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsDurationField(EsField, DurationField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsEmailField(EsField, EmailField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsFileField(EsField, FileField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsFilePathField(EsField, FilePathField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsFloatField(EsField, FloatField):
+    es_map = {"type": "float"}
+
+
+class EsImageField(EsField, ImageField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsIntegerField(EsField, IntegerField):
+    es_map = {"type": "long"}
+
+
+class EsNullBooleanField(EsField, NullBooleanField):
+    es_map = {"type": "boolean"}
+
+
+class EsPositiveIntegerField(EsField, PositiveIntegerField):
+    es_map = {"type": "long"}
+
+
+class EsPositiveSmallIntegerField(EsField, PositiveSmallIntegerField):
+    es_map = {"type": "long"}
+
+
+class EsSlugField(EsField, SlugField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsSmallIntegerField(EsField, SmallIntegerField):
+    es_map = {"type": "long"}
+
+
+class EsTimeField(EsField, TimeField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsURLField(EsField, URLField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsUUIDField(EsField, UUIDField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsGenericIPAddressField(EsField, GenericIPAddressField):
+    es_map = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+
+
+class EsForeignKey(EsField, ForeignKey):
+    es_map = {"type": "object"}
+
+
+class EsOneToOneField(EsField, OneToOneField):
+    es_map = {"type": "object"}
+
+
+class EsManyToManyField(EsField, ManyToManyField):
+    es_map = {"type": "object"}
 
 
 def get_model_from_name(name):
@@ -38,18 +147,30 @@ def get_model_from_name(name):
     return ct.model_class()
 
 
+def connect_es():
+    _es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+    try:
+        if _es.ping():
+            logging.info('Connect ES')
+            return _es
+        else:
+            logging.error('Cannot connect ES')
+            raise SystemExit
+    except Exception:
+        logging.error('Error')
+        raise SystemExit
+
+
 class EsfModel(Model):
     class Meta:
         abstract = True
         es_index_name = ""
-        es_indexes = []
+        es_doc_type = ""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.ComplexEncoder = None
 
-    def obj2es(self, index_name):
-        self._meta.es_index_name = index_name
+    def obj2es(self):
         json_obj = json.dumps(self.repr_json(), cls=self.ComplexEncoder)
         return json_obj
 
@@ -58,14 +179,11 @@ class EsfModel(Model):
         fields = self._meta.get_fields()
         for field in fields:
             if hasattr(field, "es_index"):
-                indexes = field.es_index
-                m = indexes.get(self._meta.es_index_name)
-                if m is not None:
+                index_flag = field.es_index
+                if index_flag is True:
                     if not isinstance(field, ManyToOneRel):
                         if not isinstance(field, ManyToManyField):
                             o = getattr(self, field.name)
-                            if hasattr(o, "_meta") and hasattr(o._meta, "es_index_name"):
-                                o._meta.es_index_name = self._meta.es_index_name
                             if isinstance(o, (datetime.date, datetime.datetime)):
                                 o = o.isoformat()
                             if isinstance(o, memoryview):
@@ -74,11 +192,7 @@ class EsfModel(Model):
                                     datetime.timedelta, datetime.time, decimal.Decimal, FieldFile, ImageFieldFile)):
                                 o = str(o)
                         else:
-                            print("loh")
                             o = field.related_model.objects.all()
-                            for el in o:
-                                if hasattr(el._meta, "es_index_name"):
-                                    o._meta.es_index_name = self._meta.es_index_name
                         d.update({str(field.name): o})
         return d
 
@@ -94,8 +208,7 @@ class EsfModel(Model):
                     return json.JSONEncoder.default(self, obj)
 
     @classmethod
-    def mod2es(cls, obj, index_name):
-        obj._meta.es_index_name = index_name
+    def mod2es(cls, obj):
         json_obj = json.dumps(obj.repr_mapp(obj), cls=obj.Complex1Encoder)
         return json_obj
 
@@ -105,16 +218,16 @@ class EsfModel(Model):
             d = {}
             fields = obj._meta.get_fields()
             for field in fields:
-                if hasattr(field, "es_index"):
-                    indexes = field.es_index
-                    m = indexes.get(obj._meta.es_index_name)
-                    if m is not None:
+                if hasattr(field, "es_index") and hasattr(field, "es_map"):
+                    index_flag = field.es_index
+                    m = field.es_map
+                    if field.name == "person" or field.name == "persona" or field.name == "persons":
+                        pass
+                    if index_flag is True:
                         if not isinstance(field, ManyToOneRel):
                             if field.related_model is not None:
                                 ml = field.related_model
                                 m.update({"properties": ml})
-                                if hasattr(ml._meta, "es_index_name"):
-                                    ml._meta.es_index_name = obj._meta.es_index_name
                             d.update({str(field.name): m})
         else:
             d = obj
@@ -129,51 +242,54 @@ class EsfModel(Model):
             return json.JSONEncoder.default(self, obj)
 
     @staticmethod
-    def create_indices_for_model(model, with_mapping):
-        es = es_client(['localhost'])
-        res = []
-        if hasattr(model, "_meta") and hasattr(model._meta, "es_indexes"):
-            es_ind = model._meta.es_indexes
-            for ind in es_ind:
-                index_name = ind.get('index_name')
-                doc_type = ind.get('doc_type')
-                if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    if es.indices.exists(index=index_name):
-                        es.indices.delete(index=index_name)
-                    es.indices.create(index=index_name)
-                    if with_mapping:
-                        mapp = model.mod2es(model, index_name)
-                        body = '{"properties": ' + mapp + '}'
+    def create_indices_for_model(model, with_mapping, es):
+        if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta, "es_doc_type"):
+            index_name = model._meta.es_index_name
+            doc_type = model._meta.es_doc_type
+            if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
+                if es.indices.exists(index=index_name):
+                    es.indices.delete(index=index_name)
+                    logging.info("Index %s deleted", index_name)
+                es.indices.create(index=index_name)
+                logging.info("Index %s created", index_name)
+                if with_mapping:
+                    mapp = model.mod2es(model)
+                    body = '{"properties": ' + mapp + '}'
+                    try:
                         es.indices.put_mapping(index=index_name,
                                                doc_type=doc_type,
                                                body=body,
                                                include_type_name=True,
                                                )
+                        logging.info("Mapping added")
+                    except Exception:
+                        logging.info("Error with model %s", model._meta.model_name)
 
     @staticmethod
-    def create_indices(with_mapping):
-        for model in apps.get_app_config('pictures').get_models():
-            EsfModel.create_indices_for_model(model, with_mapping)
-
-    @staticmethod
-    def put_document(obj):
-        es = es_client(['localhost'])
+    def put_document(obj, es):
         res = []
         obj_model = obj._meta.model
-        if hasattr(obj, "_meta") and hasattr(obj._meta, "es_indexes"):
-            es_ind = obj_model._meta.es_indexes
-            for ind in es_ind:
-                index_name = ind.get('index_name')
-                doc_type = ind.get('doc_type')
-                if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    json_obj = obj.obj2es(index_name)
+        if hasattr(obj, "_meta") and hasattr(obj._meta, "es_index_name") and hasattr(obj._meta, "es_doc_type"):
+            index_name = obj_model._meta.es_index_name
+            doc_type = obj_model._meta.es_doc_type
+            if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
+                json_obj = obj.obj2es()
+                try:
                     res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
+                    logging.info("The document id = %i is put on the ES", obj.id)
+                except Exception:
+                    logging.warning("Error !!! Cannot put document on the ES")
         return res
 
     @staticmethod
-    def put_documents():
+    def create_indices(with_mapping):
+        es = connect_es()
         res = []
-        for model in apps.get_app_config('pictures').get_models():
-            for obj in model.objects.all():
-                res.append(EsfModel.put_document(obj))
+
+        for model in apps.get_models():
+            if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta,
+                                                                                             "es_doc_type"):
+                EsfModel.create_indices_for_model(model, with_mapping, es)
+                for obj in model.objects.all():
+                    res.append(EsfModel.put_document(obj, es))
         return res

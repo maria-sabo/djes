@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
+from elasticsearch import Elasticsearch
 
 from es_model.esmodel import EsModel
 from esf_model.esfmodel import EsfModel
-from pictures.for_es import es_client
 from pictures.models import Picture, Author, Museum
 
 
@@ -43,36 +43,56 @@ def m_detail(request, museum_id):
 
 
 def create_index_flag_mapping(request):
-    EsfModel.create_indices(True)
-    res = EsfModel.put_documents()
+    res = EsModel.create_indices(True)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def create_index_flag(request):
-    EsfModel.create_indices(False)
-    res = EsfModel.put_documents()
+    res = EsModel.create_indices(False)
+    messages.info(request, str(res))
+    return redirect('/pictures/')
+
+
+def create_index_flag_mapping_f(request):
+    res = EsfModel.create_indices(True)
+    messages.info(request, str(res))
+
+    return redirect('/pictures/')
+
+
+def create_index_flag_f(request):
+    res = EsfModel.create_indices(False)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def delete_index(request):
-    es = es_client(['localhost'])
+    es = Elasticsearch(['localhost'])
     res = es.indices.delete('_all')
     messages.info(request, res)
     return redirect('/pictures/')
 
 
 def show_index(request):
-    es = es_client(['localhost'])
+    es = Elasticsearch(['localhost'])
     latest_list = es.search()
     return render(request, 'create_index.html', {'latest_list': latest_list})
 
 
 def show_mapping(request):
-    es = es_client(['localhost'])
+    es = Elasticsearch(['localhost'])
     latest_list = es.indices.get_mapping()
     return render(request, 'create_index.html', {'latest_list': latest_list})
+
+
+def show_log(request):
+    res = []
+    f = open('log-file.log')
+    for line in f:
+        res.append(line)
+    messages.info(request, res)
+    return redirect('/pictures/')
 
 
 def create_filter_for_pic(request):
@@ -85,7 +105,7 @@ def create_filter_for_pic(request):
 
 def create_es_for_pic(request):
     received_text = request.GET.get('search_text')
-    es = es_client(['localhost'])
+    es = Elasticsearch(['localhost'])
 
     my_query = {'query': {'multi_match': {'query': str(received_text)}}}
     latest_list = es.search(body=my_query, index='i_picture')
