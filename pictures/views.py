@@ -4,7 +4,7 @@ from elasticsearch import Elasticsearch
 
 from es_model.esmodel import EsModel
 from esf_model.esfmodel import EsfModel
-from pictures.models import Picture, Author, Museum
+from pictures.models import Picture, Author, Museum, TestModel
 
 
 def index(request):
@@ -76,21 +76,31 @@ def delete_index(request):
 
 def show_index(request):
     es = Elasticsearch(['localhost'])
-    latest_list = es.search()
-    return render(request, 'create_index.html', {'latest_list': latest_list})
+    res = es.search()
+    messages.info(request, res)
+    return redirect('/pictures/')
 
 
 def show_mapping(request):
     es = Elasticsearch(['localhost'])
-    latest_list = es.indices.get_mapping()
-    return render(request, 'create_index.html', {'latest_list': latest_list})
+    res = es.indices.get_mapping()
+    messages.info(request, res)
+    return redirect('/pictures/')
 
 
 def show_log(request):
+    # f = open('log-file.log')
+    # for line in f:
+    #     res.append(line)
+    #     res.append('\n')
+    with open('log-file.log', 'r') as f:
+        res = [x.strip() for x in f.readlines()]
+    messages.info(request, res)
+    return redirect('/pictures/')
+
+
+def alien_index1(request):
     res = []
-    f = open('log-file.log')
-    for line in f:
-        res.append(line)
     messages.info(request, res)
     return redirect('/pictures/')
 

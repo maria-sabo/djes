@@ -23,7 +23,7 @@ SECRET_KEY = '(x-opokwtu3&kuhdz@cxnz1qavvn-x#d%p15gi@4(ou9@ino9c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+ELASTICSEARCH_AUTO_INDEX = False
 ALLOWED_HOSTS = []
 
 # Application definition

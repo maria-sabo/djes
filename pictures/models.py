@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from django.db.models import Model
+from django.db.models import Model, TextField, ForeignKey
 
 from es_model.esmodel import EsModel
 from esf_model.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
@@ -9,6 +9,7 @@ from esf_model.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigInteger
     EsEmailField, EsFilePathField, EsFloatField, EsIntegerField, EsUUIDField, EsURLField, EsTimeField, \
     EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \
     EsFileField, EsImageField, EsGenericIPAddressField, EsOneToOneField, EsManyToManyField
+from django_elasticsearch.models import EsIndexable
 
 
 class TestFk(EsfModel):
@@ -23,6 +24,21 @@ class TestModel(EsfModel):
     class Meta:
         es_index_name = "index_tm"
         es_doc_type = "doc_type_tm"
+
+
+# Использование библиотек from django_elasticsearch.models import EsIndexable
+# class TestFk3(EsIndexable, Model):
+#     text = TextField()
+#
+#
+# class TestModel3(EsIndexable, Model):
+#     name = TextField()
+#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
+#
+#     class es(EsIndexable.Elasticsearch):
+#         fields = ['name', 'fk']
+#         mappings = {'name': {'type': 'text'},
+#                     'fk': {'type': 'object'}}
 
 
 class Author2(EsfModel):

@@ -285,7 +285,6 @@ class EsfModel(Model):
     def create_indices(with_mapping):
         es = connect_es()
         res = []
-
         for model in apps.get_models():
             if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta,
                                                                                              "es_doc_type"):

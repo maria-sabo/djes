@@ -11,10 +11,6 @@
             font-size: 14px;
             width: 370px;
         }
-
-        .t1 {
-
-        }
     </style>
     <table>
         <form action="create_index_flag">
@@ -27,6 +23,11 @@
                 <input type="submit" value="Create index by flags in fields" class="b1">
             </td>
         </form>
+        <form action="alien_index1">
+            <td>
+                <input type="submit" value="alien_index1" class="b1">
+            </td>
+        </form>
     </table>
     <table>
         <form action="create_index_flag_mapping">
@@ -37,6 +38,11 @@
         <form action="create_index_flag_mapping_f">
             <td>
                 <input type="submit" value="Create index with mapping by flags in fields" class="b1">
+            </td>
+        </form>
+        <form>
+            <td>
+                <input type="submit" value="Чужой индекс 2" class="b1">
             </td>
         </form>
     </table>
@@ -67,5 +73,6 @@
             {% for message in messages %}
                 {{ message }}
             {% endfor %}
-        {% endif %}</textarea></form>
+        {% endif %}
+    </textarea></form>
 {% endblock %}
