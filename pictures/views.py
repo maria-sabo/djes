@@ -101,6 +101,7 @@ def show_log(request):
 
 def alien_index1(request):
     res = []
+    #es = Elasticsearch(['localhost'])
     messages.info(request, res)
     return redirect('/pictures/')
 
