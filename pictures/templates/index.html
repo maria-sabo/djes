@@ -1,78 +1,118 @@
 {% extends "base.html" %}
-{% block title %} Main Page {% endblock %}
 {% block content %}
-    <h1> Main Page </h1>
-    <p><a href="pictures"> Pictures </a></p>
-    <p><a href="authors"> Authors </a></p>
-    <p><a href="museums"> Museums </a></p>
     <style>
-        .b1 {
-            float: left;
-            font-size: 14px;
-            width: 370px;
+        .box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            position: static;
+        }
+
+        .item {
+            width: calc(1 / 3 * 100% - (1 - 1 / 3) * 10px);
+            margin: 0 0 10px;
+            height: 50px;
+        }
+
+        input {
+            width: 100%;
+            margin: 0 0 10px;
+            height: 50px;
+            color: #000000;
+            border: 2px ridge #000000;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            background-color: #ffffff;
+        }
+
+        input:hover {
+            background: #DCDCDC
+        }
+
+        .item2p {
+            width: calc(1 / 2 * 100% - (1 - 1 / 2) * 10px);
+            margin: 0 0 10px;
+            height: 230px;
+            border: 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            border: 2px ridge #000000;
         }
     </style>
-    <table>
-        <form action="create_index_flag">
-            <td>
-                <input type="submit" value="Create index by flags" class="b1">
-            </td>
-        </form>
-        <form action="create_index_flag_f">
-            <td>
-                <input type="submit" value="Create index by flags in fields" class="b1">
-            </td>
-        </form>
-        <form action="alien_index1">
-            <td>
-                <input type="submit" value="alien_index1" class="b1">
-            </td>
-        </form>
-    </table>
-    <table>
-        <form action="create_index_flag_mapping">
-            <td>
-                <input type="submit" value="Create index with mapping by flags" class="b1">
-            </td>
-        </form>
-        <form action="create_index_flag_mapping_f">
-            <td>
-                <input type="submit" value="Create index with mapping by flags in fields" class="b1">
-            </td>
-        </form>
-        <form>
-            <td>
-                <input type="submit" value="Чужой индекс 2" class="b1">
-            </td>
-        </form>
-    </table>
-    <br>
 
-    <form action="delete_index" method="get">
-        <td>
-            <input type="submit" value="Delete index" class="b1">
-        </td>
-    </form><br><br>
-    <form action="show_index">
-        <td>
-            <input type="submit" value="Show index" class="b1">
-        </td>
-    </form><br><br>
-    <form action="show_mapping">
-        <td>
-            <input type="submit" value="Show mapping" class="b1">
-        </td>
-    </form><br><br>
-    <form action="show_log">
-        <td>
-            <input type="submit" value="Show log file" class="b1">
-        </td>
-    </form> <br><br>
-    <form><textarea cols=100 rows="12">
-        {% if messages %}
-            {% for message in messages %}
-                {{ message }}
-            {% endfor %}
-        {% endif %}
-    </textarea></form>
+    <div class='box'>
+        <div class='item'>
+            <form action="create_index_flag">
+                <input type="submit" value="Create indices using django_es">
+            </form>
+        </div>
+        <div class='item'>
+            <form action="create_index_flag_f">
+                <input type="submit" value="Create indices using django_es_f">
+            </form>
+        </div>
+        <div class='item'>
+            <form action="alien_index1">
+                <input type="submit" value="Create indices using django-elasticsearch">
+            </form>
+        </div>
+    </div>
+
+    <div class='box'>
+        <div class='item'>
+            <form action="create_index_flag_mapping">
+                <input type="submit" value="Create indices with mapping using django_es">
+            </form>
+        </div>
+        <div class='item'>
+            <form action="create_index_flag_mapping_f">
+                <input type="submit" value="Create indices with mapping using django_es_f">
+            </form>
+        </div>
+        <div class='item'>
+            <form>
+                <input type="submit" value="Create indices using django-rest-elasticsearch">
+            </form>
+        </div>
+    </div>
+
+    <div class='box'>
+        <div class='item2p'>
+            <textarea readonly>
+                {% if messages %}
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                {% endif %}
+        </textarea>
+
+        </div>
+        <div class='item2p'>
+            <form action="show_index">
+                <input type="submit" value="Show indices">
+            </form>
+            <form action="show_mapping">
+                <input type="submit" value="Show mapping">
+            </form>
+            <form action="delete_index" method="get">
+                <input type="submit" value="Delete indices">
+            </form>
+            <form action="show_log">
+                <input type="submit" value="Show log file">
+            </form>
+        </div>
+    </div>
+
+    <!-- <div class="">
+         <p><a href="pictures"> Pictures </a></p>
+         <p><a href="authors"> Authors </a></p>
+         <p><a href="museums"> Museums </a></p>
+     </div>
+ -->
 {% endblock %}

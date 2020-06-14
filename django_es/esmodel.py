@@ -14,6 +14,9 @@ from django.apps import apps
 from django.db.models.fields.files import FieldFile, ImageFieldFile
 from elasticsearch import Elasticsearch
 
+from django.db.models.signals import pre_save, post_save, post_delete
+from django.dispatch import receiver
+
 options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_mapping', 'es_path', 'mappings')
 logging.basicConfig(filename="log-file.log", level=logging.INFO)
 
@@ -35,6 +38,9 @@ def connect_es():
     except Exception:
         logging.error('Error')
         raise SystemExit
+
+
+es = connect_es()
 
 
 class EsModel(Model):
@@ -155,6 +161,19 @@ class EsModel(Model):
             return json.JSONEncoder.default(self, obj)
 
     @staticmethod
+    def del_document(obj, es):
+        res = []
+        obj_model = obj._meta.model
+        if hasattr(obj_model, "_meta") and hasattr(obj_model._meta, "mappings"):
+            mappings = obj_model.get_mappings()
+            for m in mappings:
+                index_name = m.get('es_index_name')
+                doc_type = m.get('es_doc_type')
+                if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
+                    res.append(es.delete(index=index_name, doc_type=doc_type, id=obj.id))
+        return res
+
+    @staticmethod
     def create_indices_for_model(model, with_mapping, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
             mappings = model.get_mappings()
@@ -177,7 +196,6 @@ class EsModel(Model):
 
     @staticmethod
     def create_indices(with_mapping):
-        es = connect_es()
         res = []
         for model in apps.get_models():
             if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
@@ -200,3 +218,16 @@ class EsModel(Model):
                     json_obj = obj.obj2es()
                     res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
         return res
+
+
+@receiver(post_save)
+def es_save(sender, instance, **kwargs):
+    if isinstance(sender, EsModel) and hasattr(sender, "_meta") and hasattr(sender._meta, "es_mapping"):
+        sender.put_document(instance, es)
+    var = 1
+
+
+@receiver(post_delete)
+def es_delete(sender, instance, **kwargs):
+    sender.del_document(instance, es)
+    var = 1

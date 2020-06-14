@@ -1,15 +1,15 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
 from elasticsearch import Elasticsearch
-
-from es_model.esmodel import EsModel
-from esf_model.esfmodel import EsfModel
-from pictures.models import Picture, Author, Museum, TestModel
+from django_es import esmodel
+from django_es.esmodel import EsModel
+from django_es_f.esfmodel import EsfModel
+from pictures.models import Picture, Author, Museum
 
 
 def index(request):
-    pictures_list = Picture.objects.all()
-    return render(request, 'index.html', {'pictures_list': pictures_list})
+    res = []
+    return render(request, 'index.html', {'res': res})
 
 
 def pictures(request):
@@ -55,44 +55,36 @@ def create_index_flag(request):
 
 
 def create_index_flag_mapping_f(request):
-    res = EsfModel.create_indices(True)
+    res = EsfModel.create_indices(True, True)
     messages.info(request, str(res))
-
     return redirect('/pictures/')
 
 
 def create_index_flag_f(request):
-    res = EsfModel.create_indices(False)
+    res = EsfModel.create_indices(False, True)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def delete_index(request):
-    es = Elasticsearch(['localhost'])
-    res = es.indices.delete('_all')
+    res = esmodel.es.indices.delete('_all')
     messages.info(request, res)
     return redirect('/pictures/')
 
 
 def show_index(request):
-    es = Elasticsearch(['localhost'])
-    res = es.search()
+    res = esmodel.es.search()
     messages.info(request, res)
     return redirect('/pictures/')
 
 
 def show_mapping(request):
-    es = Elasticsearch(['localhost'])
-    res = es.indices.get_mapping()
+    res = esmodel.es.indices.get_mapping()
     messages.info(request, res)
     return redirect('/pictures/')
 
 
 def show_log(request):
-    # f = open('log-file.log')
-    # for line in f:
-    #     res.append(line)
-    #     res.append('\n')
     with open('log-file.log', 'r') as f:
         res = [x.strip() for x in f.readlines()]
     messages.info(request, res)
@@ -101,7 +93,6 @@ def show_log(request):
 
 def alien_index1(request):
     res = []
-    #es = Elasticsearch(['localhost'])
     messages.info(request, res)
     return redirect('/pictures/')
 
@@ -116,10 +107,8 @@ def create_filter_for_pic(request):
 
 def create_es_for_pic(request):
     received_text = request.GET.get('search_text')
-    es = Elasticsearch(['localhost'])
-
     my_query = {'query': {'multi_match': {'query': str(received_text)}}}
-    latest_list = es.search(body=my_query, index='i_picture')
+    latest_list = esmodel.es.search(body=my_query, index='i_picture')
 
     pres = []
     for hit in latest_list['hits']['hits']:

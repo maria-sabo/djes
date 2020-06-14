@@ -3,8 +3,8 @@ import uuid
 from django.db import models
 from django.db.models import Model, TextField, ForeignKey
 
-from es_model.esmodel import EsModel
-from esf_model.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
+from django_es.esmodel import EsModel
+from django_es_f.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
     EsBinaryField, EsBooleanField, EsCharField, EsDateField, EsDateTimeField, EsDecimalField, EsDurationField, \
     EsEmailField, EsFilePathField, EsFloatField, EsIntegerField, EsUUIDField, EsURLField, EsTimeField, \
     EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \

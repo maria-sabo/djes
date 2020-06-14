@@ -170,6 +170,22 @@ class EsfModel(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @classmethod
+    def get_es_index_name(cls):
+        return cls._meta.es_index_name
+
+    @classmethod
+    def set_es_index_name(cls, es_index_name):
+        cls._meta.es_index_name = es_index_name
+
+    @classmethod
+    def get_es_doc_type(cls):
+        return cls._meta.es_doc_type
+
+    @classmethod
+    def set_es_doc_type(cls, es_doc_type):
+        cls._meta.es_doc_type = es_doc_type
+
     def obj2es(self):
         json_obj = json.dumps(self.repr_json(), cls=self.ComplexEncoder)
         return json_obj
@@ -221,8 +237,6 @@ class EsfModel(Model):
                 if hasattr(field, "es_index") and hasattr(field, "es_map"):
                     index_flag = field.es_index
                     m = field.es_map
-                    if field.name == "person" or field.name == "persona" or field.name == "persons":
-                        pass
                     if index_flag is True:
                         if not isinstance(field, ManyToOneRel):
                             if field.related_model is not None:
@@ -242,17 +256,25 @@ class EsfModel(Model):
             return json.JSONEncoder.default(self, obj)
 
     @staticmethod
-    def create_indices_for_model(model, with_mapping, es):
+    def create_indices_for_model(model, with_mapping, with_deletion, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta, "es_doc_type"):
             index_name = model._meta.es_index_name
             doc_type = model._meta.es_doc_type
             if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                if es.indices.exists(index=index_name):
-                    es.indices.delete(index=index_name)
-                    logging.info("Index %s deleted", index_name)
-                es.indices.create(index=index_name)
-                logging.info("Index %s created", index_name)
-                if with_mapping:
+                new = False
+                if with_deletion:
+                    if es.indices.exists(index=index_name):
+                        es.indices.delete(index=index_name)
+                        logging.info("Index %s deleted", index_name)
+                    es.indices.create(index=index_name)
+                    new = True
+                    logging.info("Index %s created", index_name)
+                else:
+                    if not es.indices.exists(index=index_name):
+                        es.indices.create(index=index_name)
+                        new = True
+                        logging.info("Index %s created", index_name)
+                if with_mapping and new:
                     mapp = model.mod2es(model)
                     body = '{"properties": ' + mapp + '}'
                     try:
@@ -282,13 +304,13 @@ class EsfModel(Model):
         return res
 
     @staticmethod
-    def create_indices(with_mapping):
+    def create_indices(with_mapping, with_deletion):
         es = connect_es()
         res = []
         for model in apps.get_models():
             if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta,
                                                                                              "es_doc_type"):
-                EsfModel.create_indices_for_model(model, with_mapping, es)
+                EsfModel.create_indices_for_model(model, with_mapping,  with_deletion, es)
                 for obj in model.objects.all():
                     res.append(EsfModel.put_document(obj, es))
         return res
