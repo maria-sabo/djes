@@ -15,6 +15,8 @@ from django.db.models.base import ModelBase
 
 from django.apps import apps
 from django.db.models.fields.files import FieldFile, ImageFieldFile
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from elasticsearch import Elasticsearch
 
 options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_index_name', 'es_doc_type')
@@ -161,6 +163,9 @@ def connect_es():
         raise SystemExit
 
 
+es = connect_es()
+
+
 class EsfModel(Model):
     class Meta:
         abstract = True
@@ -256,6 +261,17 @@ class EsfModel(Model):
             return json.JSONEncoder.default(self, obj)
 
     @staticmethod
+    def del_document(obj, es):
+        res = []
+        obj_model = obj._meta.model
+        if hasattr(obj_model, "_meta") and hasattr(obj_model._meta, "es_index_name"):
+            index_name = obj_model.get('es_index_name')
+            doc_type = obj_model.get('es_doc_type')
+            if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
+                res.append(es.delete(index=index_name, doc_type=doc_type, id=obj.id))
+        return res
+
+    @staticmethod
     def create_indices_for_model(model, with_mapping, with_deletion, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta, "es_doc_type"):
             index_name = model._meta.es_index_name
@@ -288,6 +304,18 @@ class EsfModel(Model):
                         logging.info("Error with model %s", model._meta.model_name)
 
     @staticmethod
+    def create_indices(with_mapping, with_deletion):
+        es = connect_es()
+        res = []
+        for model in apps.get_models():
+            if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta,
+                                                                                             "es_doc_type"):
+                EsfModel.create_indices_for_model(model, with_mapping, with_deletion, es)
+                for obj in model.objects.all():
+                    res.append(EsfModel.put_document(obj, es))
+        return res
+
+    @staticmethod
     def put_document(obj, es):
         res = []
         obj_model = obj._meta.model
@@ -303,14 +331,15 @@ class EsfModel(Model):
                     logging.warning("Error !!! Cannot put document on the ES")
         return res
 
-    @staticmethod
-    def create_indices(with_mapping, with_deletion):
-        es = connect_es()
-        res = []
-        for model in apps.get_models():
-            if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta,
-                                                                                             "es_doc_type"):
-                EsfModel.create_indices_for_model(model, with_mapping,  with_deletion, es)
-                for obj in model.objects.all():
-                    res.append(EsfModel.put_document(obj, es))
-        return res
+
+@receiver(post_save)
+def es_save(sender, instance, **kwargs):
+    if isinstance(sender, EsfModel) and hasattr(sender, "_meta") and hasattr(sender._meta, "es_mapping"):
+        sender.put_document(instance, es)
+    var = 1
+
+
+@receiver(post_delete)
+def es_delete(sender, instance, **kwargs):
+    sender.del_document(instance, es)
+    var = 1

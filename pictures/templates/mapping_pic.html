@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block title %} Search {% endblock %}
+{% block title %} Mapping {% endblock %}
 {% block content %}
+
     <style>
         h1 {
             font-size: 120%;
@@ -10,44 +11,50 @@
         }
 
         .box {
+            width: 100%;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            margin-bottom: 10px;
             position: static;
+        }
+
+
+        .inp_but {
+            width: 100px;
+            height: 50px;
+            background: #ffffff;
+            border: 2px ridge #424242;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+
+        .inp_but:hover {
+            background: #DCDCDC;
         }
 
         textarea {
             width: 100%;
             height: 400px;
+            margin-bottom: 10px;
             -webkit-box-sizing: border-box;
             -moz-box-sizing: border-box;
             box-sizing: border-box;
             border: 2px ridge #424242;
         }
+
     </style>
     <body>
-
-    <h1>Elasticsearch results</h1>
+    <h1>Mapping</h1>
 
     <div class='box'>
-            <textarea readonly>
+        <form action="change_mapp_pic" style="width: 100%">
+            <textarea name="mapp">
                 {% if res %}
-                    {% for p in res %}
-picture # {{ p.id }}: {{ p.name }}
-
-note: {{ p.note }}
-
-author: {{ p.auth.name }}
-
-note: {{ p.auth.note }}
-
-museum: {{ p.museum.name }}
-----------------------
-                    {% endfor %}
-                {% else %}
-                    Nothing found.
+{{ res }}
                 {% endif %}
             </textarea>
+            <input type="submit" value="Change" class="inp_but">
+        </form>
     </div>
+
 {% endblock %}

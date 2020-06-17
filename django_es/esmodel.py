@@ -3,6 +3,7 @@ import datetime
 import decimal
 import json
 import logging
+import collections
 
 from django.db.models import Model, ManyToManyField, QuerySet
 
@@ -48,7 +49,7 @@ class EsModel(Model):
         abstract = True
         es_mapping = {}
         es_path = ""
-        mappings = []
+        mappings = collections.OrderedDict()
 
     @classmethod
     def get_mappings(cls):
@@ -134,10 +135,10 @@ class EsModel(Model):
             d = {}
             model_start = get_model_from_name(obj.get_es_path().partition('.')[0])
             if hasattr(model_start._meta, "es_mapping"):
-                mapping_es = model_start.get_es_mapping()
+                mapping_es = model_start.get_es_mapping().copy()
                 fields = obj._meta.get_fields()
                 for key in mapping_es:
-                    mapping_field = mapping_es[key]
+                    mapping_field = mapping_es[key].copy()
                     for field in fields:
                         if key == obj.get_es_path() + field.name:
                             if mapping_field is not None:
@@ -174,32 +175,46 @@ class EsModel(Model):
         return res
 
     @staticmethod
-    def create_indices_for_model(model, with_mapping, es):
+    def create_indices_for_model(model, with_mapping, with_deletion, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
             mappings = model.get_mappings()
             for m in mappings:
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
                 if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    if es.indices.exists(index=index_name):
-                        es.indices.delete(index=index_name)
-                    es.indices.create(index=index_name)
-                    if with_mapping:
+                    new = False
+                    if with_deletion:
+                        if es.indices.exists(index=index_name):
+                            es.indices.delete(index=index_name)
+                            logging.info("Index %s deleted", index_name)
+                        es.indices.create(index=index_name)
+                        new = True
+                        logging.info("Index %s created", index_name)
+                    else:
+                        if not es.indices.exists(index=index_name):
+                            es.indices.create(index=index_name)
+                            new = True
+                            logging.info("Index %s created", index_name)
+                    if with_mapping and new:
                         model._meta.es_mapping = m.get("es_mapping")
                         mapp = model.mod2es(model)
                         body = '{"properties": ' + mapp + '}'
-                        es.indices.put_mapping(index=index_name,
-                                               doc_type=doc_type,
-                                               body=body,
-                                               include_type_name=True,
-                                               )
+                        try:
+                            es.indices.put_mapping(index=index_name,
+                                                   doc_type=doc_type,
+                                                   body=body,
+                                                   include_type_name=True,
+                                                   )
+                            logging.info("Mapping added")
+                        except Exception:
+                            logging.info("Error with model %s", model._meta.model_name)
 
     @staticmethod
-    def create_indices(with_mapping):
+    def create_indices(with_mapping, with_deletion):
         res = []
         for model in apps.get_models():
             if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
-                EsModel.create_indices_for_model(model, with_mapping, es)
+                EsModel.create_indices_for_model(model, with_mapping, with_deletion, es)
                 for obj in model.objects.all():
                     res.append(EsModel.put_document(obj, es))
         return res
@@ -214,9 +229,13 @@ class EsModel(Model):
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
                 if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    obj_model._meta.es_mapping = m.get("es_mapping")
+                    obj_model._meta.es_mapping = m.get("es_mapping").copy()
                     json_obj = obj.obj2es()
-                    res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
+                    try:
+                        res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
+                        logging.info("The document id = %i is put on the ES", obj.id)
+                    except Exception:
+                        logging.warning("Error !!! Cannot put document on the ES")
         return res
 
 

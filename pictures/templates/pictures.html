@@ -1,30 +1,92 @@
 {% extends "base.html" %}
 {% block title %} Pictures {% endblock %}
 {% block content %}
-    <form action="create_filter_for_pic">
-        <td>
-            <b>Let's search</b> <br>
-            <input type="text" size="20" name="search_text">
-            <input type="submit" value="Search" name="perform_search">
-        </td>
-    </form>
-    <form action="create_es_for_pic">
-        <td>
-            <input type="text" size="20" name="search_text">
-            <input type="submit" value="Search ES" name="perform_search_es">
-        </td>
-    </form>
-    {% if pictures_list %}
-        <ul>
-            {% for p in pictures_list %}
-                <p>
-                <li>{{ p.name }} <br> {{ p.note }} <br>
-                    {{ p.author.name }} <br> {{ p.author.note }} <br>
-                    <br> {{ p.museum.name }}
-                </li></p>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No pictures are available.</p>
-    {% endif %}
+    <style>
+        h1 {
+            font-size: 120%;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            color: #424242;
+            text-align: center;
+        }
+
+        .box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            position: static;
+        }
+
+        .item {
+            width: calc(1 / 2 * 100% - (1 - 1 / 2) * 10px);
+            margin: 0 0 5px;
+        }
+
+
+        .inp_1 {
+            width: calc(2 / 3 * 100% - (1 - 2 / 3) * 10px);
+            height: 50px;
+            border: 2px ridge #424242;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        .item:hover {
+            background: #DCDCDC
+        }
+
+        .inp_but {
+            width: calc(1 / 3 * 100% - (1 - 1 / 3) * 10px + 6px);
+            margin: 0 0 5px;
+            height: 50px;
+            background: #ffffff;
+            border: 2px ridge #424242;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        .inp_but:hover {
+            background: #DCDCDC
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            border: 2px ridge #424242;
+        }
+    </style>
+    <h1> Search for pictures in the database using index 'i_picture'</h1>
+
+    <div class='box'>
+        <div class='item'>
+            <form action="pictures_search">
+                <input type="text" onfocus="this.value=''" name="search_text" placeholder="Enter text query" class="inp_1">
+                <input type="submit" value="Search ES" name="search_es" class="inp_but">
+            </form>
+        </div>
+    </div>
+    <div class='box'>
+            <textarea readonly>
+                {% if pictures_list %}
+                    {% for p in pictures_list %}
+picture # {{ p.id }}: {{ p.name }}
+
+note: {{ p.note }}
+
+author: {{ p.auth.name }}
+
+note: {{ p.auth.note }}
+
+museum: {{ p.museum.name }}
+----------------------
+                    {% endfor %}
+                {% endif %}
+            </textarea>
+    </div>
 {% endblock %}
