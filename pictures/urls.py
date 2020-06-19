@@ -9,17 +9,19 @@ urlpatterns = [
     url(r'^museums/$', views.museums, name='museums'),
 
     url(r'^mapping_pic/$', views.mapping_pic, name='mapping_pic'),
-    url(r'^mapping/change_mapp_pic/$', views.change_mapp_pic, name='change_mapp_pic'),
+    url(r'^mapping_pic/change_mapp_pic/$', views.change_mapp_pic, name='change_mapp_pic'),
     url(r'^mapping_auth/$', views.mapping_auth, name='mapping_auth'),
-    url(r'^mapping/change_mapp_auth/$', views.change_mapp_auth, name='change_mapp_auth'),
+    url(r'^mapping_auth/change_mapp_auth/$', views.change_mapp_auth, name='change_mapp_auth'),
     url(r'^mapping_mus/$', views.mapping_mus, name='mapping_mus'),
-    url(r'^mapping/change_mapp_mus/$', views.change_mapp_mus, name='change_mapp_mus'),
+    url(r'^mapping_mus/change_mapp_mus/$', views.change_mapp_mus, name='change_mapp_mus'),
 
     url(r'^show_index/$', views.show_index, name='show_index'),
     url(r'^show_mapping/$', views.show_mapping, name='show_mapping'),
     url(r'^delete_index/$', views.delete_index, name='delete_index'),
     url(r'^show_log/$', views.show_log, name='show_log'),
     url(r'^pictures/pictures_search/$', views.pictures_search, name='pictures_search'),
+    url(r'^authors/authors_search/$', views.authors_search, name='authors_search'),
+    url(r'^museums/museums_search/$', views.authors_search, name='authors_search'),
     # url(r'^pictures/create_filter_for_pic/$', views.create_filter_for_pic, name='create_filter_for_pic'),
 
     url(r'^create_index_flag/$', views.create_index_flag, name='create_index_flag'),

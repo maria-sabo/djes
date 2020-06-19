@@ -1,13 +1,6 @@
-import base64
-import datetime
-import decimal
-import json
-import logging
-import collections
+import base64, datetime, decimal, json, logging, collections
+from django.db.models import Model, ManyToManyField, QuerySet, ManyToOneRel
 
-from django.db.models import Model, ManyToManyField, QuerySet
-
-from django.db.models import ManyToOneRel
 from django.contrib.contenttypes.models import ContentType
 import django.db.models.options as options
 from django.db.models.base import ModelBase
@@ -15,7 +8,7 @@ from django.apps import apps
 from django.db.models.fields.files import FieldFile, ImageFieldFile
 from elasticsearch import Elasticsearch
 
-from django.db.models.signals import pre_save, post_save, post_delete
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 options.DEFAULT_NAMES = options.DEFAULT_NAMES + ('es_mapping', 'es_path', 'mappings')
@@ -54,6 +47,10 @@ class EsModel(Model):
     @classmethod
     def get_mappings(cls):
         return cls._meta.mappings
+
+    @classmethod
+    def set_mappings(cls, mappings):
+        cls._meta.mappings = mappings
 
     @classmethod
     def get_es_mapping(cls):
@@ -196,7 +193,7 @@ class EsModel(Model):
                             new = True
                             logging.info("Index %s created", index_name)
                     if with_mapping and new:
-                        model._meta.es_mapping = m.get("es_mapping")
+                        model.set_es_mapping(m.get("es_mapping").copy())
                         mapp = model.mod2es(model)
                         body = '{"properties": ' + mapp + '}'
                         try:
@@ -229,7 +226,7 @@ class EsModel(Model):
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
                 if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    obj_model._meta.es_mapping = m.get("es_mapping").copy()
+                    obj_model.set_es_mapping(m.get("es_mapping").copy())
                     json_obj = obj.obj2es()
                     try:
                         res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))

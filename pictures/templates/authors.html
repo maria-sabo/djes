@@ -1,13 +1,35 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %} Authors {% endblock %}
 {% block content %}
-    {% if authors_list %}
-        <ul>
-            {% for a in authors_list %}
-                <li>{{ a.name }} {{ a.datebirth }} {{ a.datedeath }} {{ a.countrybirth }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No authors are available.</p>
-    {% endif %}
+    <link href="{% static 'styles/search.css' %}" rel="stylesheet">
+    <h1> Search for authors in the database using index 'i_author'</h1>
+
+    <div class='box'>
+        <div class='item'>
+            <form action="authors_search">
+                <input type="text" onfocus="this.value=''" name="search_text" placeholder="Enter text query" class="inp_1">
+                <input type="submit" value="Search ES" name="search_es" class="inp_but">
+            </form>
+        </div>
+    </div>
+    <div class='box'>
+            <textarea readonly>
+                {% if authors_list %}
+                    {% for p in authors_list %}
+author # {{ p.id }}: {{ p.name }}
+
+date birth: {{ p.date_birth }}
+
+date death: {{ p.date_death }}
+
+country: {{ p.country_birth }}
+
+note: {{ p.note }}
+
+----------------------
+                    {% endfor %}
+                {% endif %}
+            </textarea>
+    </div>
 {% endblock %}

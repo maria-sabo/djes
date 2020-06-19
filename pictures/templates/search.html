@@ -45,8 +45,40 @@ note: {{ p.auth.note }}
 museum: {{ p.museum.name }}
 ----------------------
                     {% endfor %}
-                {% else %}
-                    Nothing found.
+                {% endif %}
+             {% if res_author %}
+                    {% for p in res_author %}
+author # {{ p.id }}: {{ p.name }}
+
+date birth: {{ p.date_birth }}
+
+date death: {{ p.date_death }}
+
+country: {{ p.country_birth }}
+
+note: {{ p.note }}
+
+----------------------
+                    {% endfor %}
+                {% endif %}
+             {% if res_museum %}
+                    {% for p in res_museum %}
+museum # {{ p.id }}: {{ p.name }}
+
+year foundation: {{ p.year_foundation }}
+
+country: {{ p.address.country }}
+
+city: {{ p.address.city }}
+
+street: {{ p.address.street}}
+
+house: {{ p.address.house }}
+
+note: {{ p.note }}
+
+----------------------
+                    {% endfor %}
                 {% endif %}
             </textarea>
     </div>

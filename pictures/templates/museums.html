@@ -1,13 +1,39 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %} Museums {% endblock %}
 {% block content %}
-    {% if museums_list %}
-        <ul>
-            {% for m in museums_list %}
-                <li>{{ m.name }} {{ m.country }} {{ m.city }} {{ m.yearfoundation }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No museums are available.</p>
-    {% endif %}
+    <link href="{% static 'styles/search.css' %}" rel="stylesheet">
+    <h1> Search for pictures in the database using index 'i_museum'</h1>
+
+    <div class='box'>
+        <div class='item'>
+            <form action="museums_search">
+                <input type="text" onfocus="this.value=''" name="search_text" placeholder="Enter text query" class="inp_1">
+                <input type="submit" value="Search ES" name="search_es" class="inp_but">
+            </form>
+        </div>
+    </div>
+    <div class='box'>
+            <textarea readonly>
+                {% if museums_list %}
+                    {% for p in museums_list %}
+museum # {{ p.id }}: {{ p.name }}
+
+year foundation: {{ p.year_foundation }}
+
+country: {{ p.address.country }}
+
+city: {{ p.address.city }}
+
+street: {{ p.address.street}}
+
+house: {{ p.address.house }}
+
+note: {{ p.note }}
+
+----------------------
+                    {% endfor %}
+                {% endif %}
+            </textarea>
+    </div>
 {% endblock %}

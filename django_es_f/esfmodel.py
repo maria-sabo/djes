@@ -274,8 +274,8 @@ class EsfModel(Model):
     @staticmethod
     def create_indices_for_model(model, with_mapping, with_deletion, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "es_index_name") and hasattr(model._meta, "es_doc_type"):
-            index_name = model._meta.es_index_name
-            doc_type = model._meta.es_doc_type
+            index_name = model.get_es_index_name()
+            doc_type = model.get_es_doc_type()
             if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
                 new = False
                 if with_deletion:
@@ -320,8 +320,8 @@ class EsfModel(Model):
         res = []
         obj_model = obj._meta.model
         if hasattr(obj, "_meta") and hasattr(obj._meta, "es_index_name") and hasattr(obj._meta, "es_doc_type"):
-            index_name = obj_model._meta.es_index_name
-            doc_type = obj_model._meta.es_doc_type
+            index_name = obj_model.get_es_index_name()
+            doc_type = obj_model.get_es_doc_type()
             if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
                 json_obj = obj.obj2es()
                 try:
@@ -336,10 +336,9 @@ class EsfModel(Model):
 def es_save(sender, instance, **kwargs):
     if isinstance(sender, EsfModel) and hasattr(sender, "_meta") and hasattr(sender._meta, "es_mapping"):
         sender.put_document(instance, es)
-    var = 1
 
 
 @receiver(post_delete)
 def es_delete(sender, instance, **kwargs):
     sender.del_document(instance, es)
-    var = 1
+

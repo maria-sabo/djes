@@ -1,10 +1,10 @@
 import time
-from django.test import TestCase
+import unittest
 from elasticsearch import Elasticsearch
 from pictures.models import Address, Person, Address2, Person2
 
 
-class EsModelTestCase(TestCase):
+class EsModelTestCase(unittest.TestCase):
     es = Elasticsearch(['localhost'])
 
     test_address = Address.objects.create(country='Russia', city='Moscow', street='Tverskaya street',
@@ -39,7 +39,7 @@ class EsModelTestCase(TestCase):
         },
     ]
 
-    def test_EsModel_ob2es(self):
+    def test_EsModel_obj2es(self):
         # проверка работы метода obj2es - экземпляр модели в соответствии с заданным мэппингом переводится в JSON
         self.test_person._meta.es_mapping = self.test_person._meta.mappings[0].get("es_mapping")
         o1 = self.test_person.obj2es()
@@ -78,7 +78,7 @@ class EsModelTestCase(TestCase):
 
     def test_EsModel_create_indices_for_model_with_mapping(self):
         # проверка создания индексов на модель Person, используя маппинг
-        Person.create_indices_for_model(Person, True, self.es)
+        Person.create_indices_for_model(Person, True, True, self.es)
         time.sleep(1)
         # передаем ES документы
         Person.put_document(self.test_person, self.es)
@@ -119,7 +119,7 @@ class EsModelTestCase(TestCase):
     def test_EsModel_create_indices_for_model_without_mapping(self):
         self.maxDiff = None
         # создание индексов на модель Person без учета маппинга
-        Person.create_indices_for_model(Person, False, self.es)
+        Person.create_indices_for_model(Person, False, True, self.es)
         map1 = self.es.indices.get_mapping(index='i_person')
         time.sleep(1)
         map2 = self.es.indices.get_mapping(index='ii_person')
@@ -173,7 +173,7 @@ class EsModelTestCase(TestCase):
         self.assertDictEqual(res3['hits']['hits'][0].get("_source"), {})
 
 
-class EsfModelTestCase(TestCase):
+class EsfModelTestCase(unittest.TestCase):
     es = Elasticsearch(['localhost'])
     test_address = Address2.objects.create(country='Russia', city='Moscow', street='Tverskaya street',
                                            house='house 5')
@@ -201,7 +201,7 @@ class EsfModelTestCase(TestCase):
 
     def test_EsfModel_create_indices_for_model_with_mapping(self):
         # проверка создания индексов на модель Person, используя маппинг
-        Person2.create_indices_for_model(Person2, True, self.es)
+        Person2.create_indices_for_model(Person2, True, True, self.es)
         time.sleep(1)
         # передаем ES документы
         Person2.put_document(self.test_person, self.es)
@@ -229,7 +229,7 @@ class EsfModelTestCase(TestCase):
     def test_EsfModel_create_indices_for_model_without_mapping(self):
         self.maxDiff = None
         # создание индексов на модель Person без учета маппинга
-        Person2.create_indices_for_model(Person2, False, self.es)
+        Person2.create_indices_for_model(Person2, False, True, self.es)
         map1 = self.es.indices.get_mapping(index='i_person2')
         time.sleep(1)
 

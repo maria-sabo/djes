@@ -1,5 +1,8 @@
+import os
 import re
 import json
+from collections import deque
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
 from django_es import esmodel
@@ -18,74 +21,14 @@ def pictures(request):
     return render(request, 'pictures.html', {'pictures_list': pictures_list[0:10]})
 
 
-def change_mapp_pic(request):
-    received_mapp = request.GET.get('mapp')
-    received_mapp = json.loads(received_mapp.replace("'", '"'))
-    Picture._meta.mappings = received_mapp
-    print(received_mapp)
-    return redirect('/pictures/')
-
-
-def change_mapp_auth(request):
-    received_mapp = request.GET.get('mapp')
-    received_mapp = json.loads(received_mapp.replace("'", '"'))
-    Author._meta.mappings = received_mapp
-    print(received_mapp)
-    return redirect('/pictures/')
-
-
-def change_mapp_mus(request):
-    received_mapp = request.GET.get('mapp')
-    received_mapp = json.loads(received_mapp.replace("'", '"'))
-    Museum._meta.mappings = received_mapp
-    print(received_mapp)
-    return redirect('/pictures/')
-
-
-def mapping_pic(request):
-    var = Picture._meta.mappings
-    var = str(var)
-    var = re.sub("^\s+|\n|\r|\t|\s+$", '', var)
-    var = var.replace("},", '},\n')
-    return render(request, 'mapping_pic.html', {'res': var})
-
-
-def mapping_auth(request):
-    var = Author._meta.mappings
-    var = str(var)
-    var = re.sub("^\s+|\n|\r|\t|\s+$", '', var)
-    var = var.replace("},", '},\n')
-    return render(request, 'mapping_auth.html', {'res': var})
-
-
-def mapping_mus(request):
-    var = Museum._meta.mappings
-    var = str(var)
-    var = re.sub("^\s+|\n|\r|\t|\s+$", '', var)
-    var = var.replace("},", '},\n')
-    return render(request, 'mapping_mus.html', {'res': var})
-
-
-def pictures_search(request):
-    received_text = request.GET.get('search_text')
-    my_query = {'query': {'multi_match': {'query': str(received_text)}}}
-    latest_list = esmodel.es.search(body=my_query, index='i_picture')
-    pres = []
-    for hit in latest_list['hits']['hits']:
-        pres.append(int(hit["_id"]))
-        print(int(hit["_id"]))
-    res = Picture.objects.filter(id__in=pres)
-    return render(request, 'search.html', {'res': res})
-
-
 def authors(request):
     authors_list = Author.objects.all()
-    return render(request, 'authors.html', {'authors_list': authors_list})
+    return render(request, 'authors.html', {'authors_list': authors_list[0:10]})
 
 
 def museums(request):
     museums_list = Museum.objects.all()
-    return render(request, 'museums.html', {'museums_list': museums_list})
+    return render(request, 'museums.html', {'museums_list': museums_list[0:10]})
 
 
 def p_detail(request, picture_id):
@@ -101,6 +44,87 @@ def a_detail(request, author_id):
 def m_detail(request, museum_id):
     museum = get_object_or_404(Museum, pk=museum_id)
     return render(request, 'm_detail.html', {'museum': museum})
+
+
+def change_mapp_pic(request):
+    received_mapp = request.GET.get('mapp')
+    received_mapp = json.loads(received_mapp.replace("'", '"'))
+    Picture.set_mappings(received_mapp)
+    print(received_mapp)
+    return redirect('/pictures/')
+
+
+def change_mapp_auth(request):
+    received_mapp = request.GET.get('mapp')
+    received_mapp = json.loads(received_mapp.replace("'", '"'))
+    Author.set_mappings(received_mapp)
+    print(received_mapp)
+    return redirect('/pictures/')
+
+
+def change_mapp_mus(request):
+    received_mapp = request.GET.get('mapp')
+    received_mapp = json.loads(received_mapp.replace("'", '"'))
+    Museum.set_mappings(received_mapp)
+    print(received_mapp)
+    return redirect('/pictures/')
+
+
+def mapping_pic(request):
+    var = Picture.get_mappings()
+    var = str(var)
+    var = var.replace("},", '},\n')
+    return render(request, 'mapping_pic.html', {'res': var})
+
+
+def mapping_auth(request):
+    var = Author.get_mappings()
+    var = str(var)
+    var = var.replace("},", '},\n')
+    return render(request, 'mapping_auth.html', {'res': var})
+
+
+def mapping_mus(request):
+    var = Museum.get_mappings()
+    var = str(var)
+    var = var.replace("},", '},\n')
+    return render(request, 'mapping_mus.html', {'res': var})
+
+
+def pictures_search(request):
+    received_text = request.GET.get('search_text')
+    my_query = {'query': {'multi_match': {'query': received_text}}}
+    latest_list = esmodel.es.search(body=my_query, index='i_picture')
+    pres = []
+    for hit in latest_list['hits']['hits']:
+        pres.append(int(hit["_id"]))
+        print(int(hit["_id"]))
+    res = Picture.objects.filter(id__in=pres)
+    return render(request, 'search.html', {'res': res})
+
+
+def authors_search(request):
+    received_text = request.GET.get('search_text')
+    my_query = {'query': {'multi_match': {'query': received_text}}}
+    latest_list = esmodel.es.search(body=my_query, index='i_author')
+    pres = []
+    for hit in latest_list['hits']['hits']:
+        pres.append(int(hit["_id"]))
+        print(int(hit["_id"]))
+    res = Author.objects.filter(id__in=pres)
+    return render(request, 'search.html', {'res_author': res})
+
+
+def museums_search(request):
+    received_text = request.GET.get('search_text')
+    my_query = {'query': {'multi_match': {'query': received_text}}}
+    latest_list = esmodel.es.search(body=my_query, index='i_museum')
+    pres = []
+    for hit in latest_list['hits']['hits']:
+        pres.append(int(hit["_id"]))
+        print(int(hit["_id"]))
+    res = Museum.objects.filter(id__in=pres)
+    return render(request, 'search.html', {'res_museum': res})
 
 
 def create_index_flag_mapping(request):
@@ -153,7 +177,7 @@ def show_mapping(request):
 
 def show_log(request):
     with open('log-file.log', 'r') as f:
-        res = [x.strip() for x in f.readlines()]
+        res = [x.strip() for x in deque(f, 1000)]
     messages.info(request, res)
     return redirect('/pictures/')
 
@@ -162,11 +186,3 @@ def alien_index1(request):
     res = []
     messages.info(request, res)
     return redirect('/pictures/')
-
-# def create_filter_for_pic(request):
-#     res = Picture.objects.all()
-#     received_text = request.GET.get('search_text')
-#     print(received_text)
-#     res = res.filter(name__contains=received_text)
-#     return res
-# return render(request, 'search.html', {'res': res})
