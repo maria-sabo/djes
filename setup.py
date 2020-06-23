@@ -6,5 +6,5 @@ setup(
     description="Indexing Django models for Elasticsearch.",
     author="Masha Sabo",
     url="https://github.com/maria-sabo/djes",
-    packages=['djes'],
+    packages=['django_es', 'django_es_f'],
 )
