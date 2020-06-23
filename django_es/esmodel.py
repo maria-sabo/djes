@@ -40,9 +40,9 @@ es = connect_es()
 class EsModel(Model):
     class Meta:
         abstract = True
-        es_mapping = {}
+        es_mapping = collections.OrderedDict()
         es_path = ""
-        mappings = collections.OrderedDict()
+        mappings = []
 
     @classmethod
     def get_mappings(cls):
@@ -240,10 +240,8 @@ class EsModel(Model):
 def es_save(sender, instance, **kwargs):
     if isinstance(sender, EsModel) and hasattr(sender, "_meta") and hasattr(sender._meta, "es_mapping"):
         sender.put_document(instance, es)
-    var = 1
 
 
 @receiver(post_delete)
 def es_delete(sender, instance, **kwargs):
     sender.del_document(instance, es)
-    var = 1
