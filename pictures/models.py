@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.db.models import Model, TextField, ForeignKey
+from django_elasticsearch.managers import ElasticsearchManager
 
 from django_es.esmodel import EsModel
 from django_es_f.esfmodel import EsfModel
@@ -17,18 +18,21 @@ from dj_es.djesmodel import DjesModel, EsTextField, EsForeignKey, EsBigIntegerFi
     EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \
     EsFileField, EsImageField, EsGenericIPAddressField, EsOneToOneField, EsManyToManyField
 
-
 from django_elasticsearch.models import EsIndexable
 
-
+from django_elasticsearch import managers
 class TestFk(DjesModel):
     text = EsTextField(es_index=True, es_map={'type': 'text'})
+    # text = TextField()
 
 
 class TestModel(DjesModel):
     name = EsTextField(es_index=True, )
     fk = EsForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None,
                       es_index=True, es_map={'type': 'object'})
+
+    # name = TextField()
+    # fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None,)
 
     class Meta:
         index_using_fields = False
@@ -50,27 +54,9 @@ class TestModel(DjesModel):
                 },
             },
         ]
-        # es_index_name = "index_tm"
-        # es_doc_type = "doc_type_tm"
 
 
-
-# Использование библиотек from django_elasticsearch.models import EsIndexable
-# class TestFk3(EsIndexable, Model):
-#     text = TextField()
-#
-#
-# class TestModel3(EsIndexable, Model):
-#     name = TextField()
-#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
-#
-#     class es(EsIndexable.Elasticsearch):
-#         fields = ['name', 'fk']
-#         mappings = {'name': {'type': 'text'},
-#                     'fk': {'type': 'object'}}
-
-
-class Author2(EsfModel):
+class Author2(DjesModel):
     name = EsTextField(es_index=True, es_map={'type': 'keyword'})
     date_birth = EsDateField(es_index=True, es_map={'type': 'text'})
     date_death = EsDateField(es_index=True, es_map={'type': 'text'})
@@ -115,11 +101,12 @@ class Author2(EsfModel):
                              es_index=True, es_map={'type': 'text'})
 
     class Meta:
-        es_index_name = "index_with_new_fields2"
-        es_doc_type = "type_with_new_fields2"
+        index_using_fields = True
+        mappings = [{"es_index_name": "index_with_new_fields2",
+                     "es_doc_type": "type_with_new_fields2"}]
 
 
-class Author(EsModel):
+class Author(DjesModel):
     name = models.TextField()
     date_birth = models.DateField()
     date_death = models.DateField()
@@ -149,6 +136,7 @@ class Author(EsModel):
     field_uuid = models.UUIDField(null=True, blank=True, default=uuid.uuid4, editable=False)
 
     class Meta:
+        index_using_fields = False
         mappings = [
             {
                 "es_index_name": "i_author",
@@ -189,35 +177,37 @@ class Author(EsModel):
         ]
 
 
-class Address2(EsfModel):
+class Address2(DjesModel):
     country = EsTextField()
     city = EsTextField()
     street = EsTextField()
     house = EsTextField()
 
 
-class Address(EsModel):
+class Address(DjesModel):
     country = models.TextField()
     city = models.TextField()
     street = models.TextField()
     house = models.TextField()
 
 
-class Person2(EsfModel):
+class Person2(DjesModel):
     name = EsTextField(es_index=True, es_map={'type': 'text'})
     address = EsForeignKey(Address2, on_delete=models.CASCADE, null=True, blank=True, default=None,
                            es_index=True, es_map={'type': 'object'})
 
     class Meta:
-        es_index_name = "i_person2"
-        es_doc_type = "t_person2"
+        index_using_fields = True
+        mappings = [{"es_index_name": "i_person2",
+                     "es_doc_type": "t_person2"}]
 
 
-class Person(EsModel):
+class Person(DjesModel):
     name = models.TextField()
     address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
     class Meta:
+        index_using_fields = False
         mappings = [
             {
                 "es_index_name": "i_person",
@@ -241,7 +231,7 @@ class Person(EsModel):
         ]
 
 
-class Museum2(EsfModel):
+class Museum2(DjesModel):
     name = EsTextField(es_index=True)
     address = EsForeignKey(Address2, on_delete=models.CASCADE, null=True, blank=True, default=None,
                            es_index=True, es_map={'type': 'object'})
@@ -251,11 +241,12 @@ class Museum2(EsfModel):
                               es_index=True, es_map={'type': 'object'})
 
     class Meta:
-        es_index_name = "i_museum2"
-        es_doc_type = "t_museum2"
+        index_using_fields = True
+        mappings = [{"es_index_name": "i_museum2",
+                     "es_doc_type": "t_museum2"}]
 
 
-class Museum(EsModel):
+class Museum(DjesModel):
     name = models.TextField()
     address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True, default=None)
     year_foundation = models.IntegerField()
@@ -263,6 +254,7 @@ class Museum(EsModel):
     persona = models.OneToOneField(Person, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
     class Meta:
+        index_using_fields = False
         mappings = [
             {
                 "es_index_name": "i_museum",
@@ -292,7 +284,7 @@ class Museum(EsModel):
         ]
 
 
-class Picture2(EsfModel):
+class Picture2(DjesModel):
     name = EsTextField(es_index=True, es_map={'type': 'text'})
     auth = EsForeignKey(Author2, on_delete=models.CASCADE, es_index=True, es_map={'type': 'object'})
     museum = EsForeignKey(Museum2, on_delete=models.CASCADE, es_index=True, es_map={'type': 'object'})
@@ -303,11 +295,12 @@ class Picture2(EsfModel):
                         es_index=True, es_map={'type': 'object'})
 
     class Meta:
-        es_index_name = "i_picture2"
-        es_doc_type = "t_picture2"
+        index_using_fields = True
+        mappings = [{"es_index_name": "i_picture2",
+                     "es_doc_type": "t_picture2"}]
 
 
-class Picture(EsModel):
+class Picture(DjesModel):
     name = models.TextField()
     auth = models.ForeignKey(Author, on_delete=models.CASCADE)
     museum = models.ForeignKey(Museum, on_delete=models.CASCADE)
@@ -316,6 +309,7 @@ class Picture(EsModel):
     addr = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
     class Meta:
+        index_using_fields = False
         mappings = [
             {"es_index_name": "i_picture",
              "es_doc_type": "t_picture",
@@ -349,3 +343,33 @@ class Picture(EsModel):
              },
              }
         ]
+
+
+# class TestAFk(DjesModel):
+#     text = TextField()
+#
+#
+# class TestAModel(DjesModel):
+#     name = TextField()
+#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
+#     em = ElasticsearchManager()
+#
+#     class es(EsIndexable.Elasticsearch):
+#         fields = ['name', 'fk']
+#         mappings = {'name': {'type': 'text'},
+#                     'fk': {'type': 'object'}}
+#
+#
+#     # class El(EsIndexable.Elasticsearch):
+#     #     index = 'TA'
+#     #     doc_type = 'TA'
+#     #     fields = {'fk'}
+#
+#
+# class TestBFk(DjesModel):
+#     text = TextField()
+#
+#
+# class TestBModel(DjesModel):
+#     name = TextField()
+#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)

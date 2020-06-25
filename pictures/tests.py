@@ -61,6 +61,46 @@ class DjesModelTestCase(TestCase):
                          '"fk": {"type": "object", "properties": {'
                          '"text": {"type": "text"}}}}')
 
+    def test_DjesModel_create_indices_for_model_with_mapping(self):
+        # проверка создания индексов на модель Person, используя маппинг
+        TestModel.create_indices_for_model(Person, True, self.es)
+        time.sleep(1)
+        # передаем ES документ
+        TestModel.put_document(self.test_m, self.es)
+        time.sleep(1)
+        map1 = self.es.indices.get_mapping(index='i_test')
+        time.sleep(1)
+        map2 = self.es.indices.get_mapping(index='ii_test')
+        time.sleep(1)
+
+        res1 = self.es.search(index='i_test')
+        time.sleep(1)
+        res2 = self.es.search(index='ii_test')
+        time.sleep(1)
+
+        self.assertDictEqual(map1, {'i_test': {'mappings':
+                                                   {'properties': {'fk': {'properties':
+                                                                              {'text':
+                                                                                   {'type': 'text', 'fields': {
+                                                                                       'keyword': {'type': 'keyword',
+                                                                                                   'ignore_above': 256}}}}},
+                                                                   'name':
+                                                                       {'type': 'text', 'fields': {
+                                                                           'keyword': {'type': 'keyword',
+                                                                                       'ignore_above': 256}}}}}}})
+        self.assertDictEqual(map2, {'ii_test': {'mappings':
+                                                    {'properties':
+                                                         {'name':
+                                                              {'type': 'text', 'fields': {
+                                                                  'keyword': {'type': 'keyword',
+                                                                              'ignore_above': 256}}}}}}})
+
+        self.assertDictEqual(res1['hits']['hits'][0].get("_source"),
+                             {'name': 'Masha', 'fk': {'text': 'Some text'}})
+
+        self.assertDictEqual(res2['hits']['hits'][0].get("_source"),
+                             {'name': 'Masha'})
+
 
 class EsModelTestCase(TestCase):
     es = Elasticsearch(['localhost'])

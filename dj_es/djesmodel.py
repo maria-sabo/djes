@@ -280,13 +280,14 @@ class DjesModel(Model):
     def repr_json(self):
         d = {}
         model_start = get_model_from_name(self.get_es_path().partition('.')[0])
-        if hasattr(model_start._meta, "es_mapping"):
-            es_mapping = model_start.get_es_mapping().copy()
+        if hasattr(model_start._meta, "index_using_fields"):
             index_using_fields = model_start.get_index_using_fields()
             if index_using_fields:
                 d = self.dict_from_fields()
             else:
-                d = self.dict_from_es_mapping(es_mapping)
+                if hasattr(model_start._meta, "es_mapping"):
+                    es_mapping = model_start.get_es_mapping().copy()
+                    d = self.dict_from_es_mapping(es_mapping)
         return d
 
     class ComplexEncoder(json.JSONEncoder):
@@ -338,7 +339,7 @@ class DjesModel(Model):
             if hasattr(field, "es_index") and hasattr(field, "es_map"):
                 index_flag = field.es_index
                 if index_flag is True:
-                    mapping_field = field.es_map.copy()
+                    mapping_field = field.es_map
                     mapping_field = cls.modify_mapp(obj, field, mapping_field)
                     d.update({str(field.name): mapping_field})
         return d
@@ -348,36 +349,17 @@ class DjesModel(Model):
         d = {}
         if hasattr(obj, "_meta") and hasattr(obj._meta, "es_path"):
             model_start = get_model_from_name(obj.get_es_path().partition('.')[0])
-            if hasattr(model_start._meta, "es_mapping"):
-                es_mapping = model_start.get_es_mapping().copy()
+            if hasattr(model_start._meta, "index_using_fields"):
                 index_using_fields = model_start.get_index_using_fields()
                 if index_using_fields:
                     d = cls.map_dict_from_fields(obj)
                 else:
-                    d = cls.map_dict_from_es_mapping(obj, es_mapping)
+                    if hasattr(model_start._meta, "es_mapping"):
+                        es_mapping = model_start.get_es_mapping().copy()
+                        d = cls.map_dict_from_es_mapping(obj, es_mapping)
         else:
             d = obj
         return d
-
-        # if hasattr(model_start._meta, "es_mapping"):
-        #     mapping_es = model_start.get_es_mapping().copy()
-        #     fields = obj._meta.get_fields()
-        #     for key in mapping_es:
-        #         mapping_field = mapping_es[key].copy()
-        #         for field in fields:
-        #             if key == obj.get_es_path() + field.name:
-        #                 if mapping_field is not None:
-        #                     if not isinstance(field, ManyToOneRel):
-        #                         if field.related_model is not None:
-        #                             ml = field.related_model
-        #                             mapping_field.update({"properties": ml})
-        #                             if hasattr(ml._meta, "es_path"):
-        #                                 ml.set_es_path(obj.get_es_path() + field.name + ".")
-        #                         d.update({str(field.name): mapping_field})
-
-    # else:
-    #     d = obj
-    # return d
 
     class Complex1Encoder(json.JSONEncoder):
         def default(self, obj):
@@ -401,49 +383,43 @@ class DjesModel(Model):
         return res
 
     @staticmethod
-    def create_indices_for_model(model, with_mapping, with_deletion, es):
+    def create_indices_for_model(model, with_mapping, es):
         if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
             mappings = model.get_mappings()
             for m in mappings:
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
+                # model.set_es_index_name(index_name)
+                # model.set_es_doc_type(doc_type)
+                em = m.get("es_mapping")
+                if em is not None:
+                    model.set_es_mapping(m.get("es_mapping").copy())
+                else:
+                    model.set_es_mapping(collections.OrderedDict())
                 if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    new = False
-                    if with_deletion:
+                    try:
                         if es.indices.exists(index=index_name):
                             es.indices.delete(index=index_name)
                             logging.info("Index %s deleted", index_name)
                         es.indices.create(index=index_name)
-                        new = True
-                        logging.info("Index %s created", index_name)
-                    else:
-                        if not es.indices.exists(index=index_name):
-                            es.indices.create(index=index_name)
-                            new = True
-                            logging.info("Index %s created", index_name)
-                    if with_mapping and new:
-                        model.set_es_mapping(m.get("es_mapping").copy())
-                        mapp = model.mod2es(model)
-                        body = '{"properties": ' + mapp + '}'
-                        try:
-                            es.indices.put_mapping(index=index_name,
-                                                   doc_type=doc_type,
-                                                   body=body,
-                                                   include_type_name=True,
-                                                   )
-                            logging.info("Mapping added")
-                        except Exception:
-                            logging.info("Error with model %s", model._meta.model_name)
+                    except Exception:
+                        logging.info("Error")
+                    now = datetime.datetime.now()
+                    logging.info("Index %s created, time: %s", index_name, now.isoformat())
 
-    @staticmethod
-    def create_indices(with_mapping, with_deletion):
-        res = []
-        for model in apps.get_models():
-            if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
-                DjesModel.create_indices_for_model(model, with_mapping, with_deletion, es)
-                for obj in model.objects.all():
-                    res.append(DjesModel.put_document(obj, es))
-        return res
+                if with_mapping:
+                    mapp = model.mod2es(model)
+                    body = '{"properties": ' + mapp + '}'
+                    try:
+                        es.indices.put_mapping(index=index_name,
+                                               doc_type=doc_type,
+                                               body=body,
+                                               include_type_name=True,
+                                               )
+                        now = datetime.datetime.now()
+                        logging.info("Mapping added, time: %s", now.isoformat())
+                    except Exception:
+                        logging.info("Error with model %s", model._meta.model_name)
 
     @staticmethod
     def put_document(obj, es):
@@ -455,13 +431,28 @@ class DjesModel(Model):
                 index_name = m.get('es_index_name')
                 doc_type = m.get('es_doc_type')
                 if index_name is not None and doc_type is not None and index_name != "" and doc_type != "":
-                    obj_model.set_es_mapping(m.get("es_mapping").copy())
+                    em = m.get("es_mapping")
+                    if em is not None:
+                        obj_model.set_es_mapping(em.copy())
+                    else:
+                        obj_model.set_es_mapping(collections.OrderedDict())
                     json_obj = obj.obj2es()
                     try:
                         res.append(es.index(index=index_name, doc_type=doc_type, body=json_obj, id=obj.id))
-                        logging.info("The document id = %i is put on the ES", obj.id)
+                        now = datetime.datetime.now()
+                        logging.info("The document id = %i is put on the ES, time: %s", obj.id, now.isoformat())
                     except Exception:
-                        logging.warning("Error !!! Cannot put document on the ES")
+                        logging.warning("Error. Cannot put document on the ES")
+        return res
+
+    @staticmethod
+    def create_indices(with_mapping):
+        res = []
+        for model in apps.get_models():
+            if hasattr(model, "_meta") and hasattr(model._meta, "mappings"):
+                DjesModel.create_indices_for_model(model, with_mapping, es)
+                for obj in model.objects.all():
+                    res.append(DjesModel.put_document(obj, es))
         return res
 
     @receiver(post_save)

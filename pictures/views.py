@@ -5,10 +5,13 @@ from collections import deque
 
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
+
+from dj_es import djesmodel
+from dj_es.djesmodel import DjesModel
 from django_es import esmodel
 from django_es.esmodel import EsModel
 from django_es_f.esfmodel import EsfModel
-from pictures.models import Picture, Author, Museum
+from pictures.models import Picture, Author, Museum, TestAModel
 
 
 def index(request):
@@ -128,31 +131,31 @@ def museums_search(request):
 
 
 def create_index_flag_mapping(request):
-    res = EsModel.create_indices(True, True)
+    res = DjesModel.create_indices(True)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def create_index_flag(request):
-    res = EsModel.create_indices(False, True)
+    res = DjesModel.create_indices(False)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def create_index_flag_mapping_f(request):
-    res = EsfModel.create_indices(True, True)
+    res = DjesModel.create_indices(True)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def create_index_flag_f(request):
-    res = EsfModel.create_indices(False, True)
+    res = DjesModel.create_indices(False)
     messages.info(request, str(res))
     return redirect('/pictures/')
 
 
 def delete_index(request):
-    res = esmodel.es.indices.delete('_all')
+    res = djesmodel.es.indices.delete('_all')
     messages.info(request, res)
     return redirect('/pictures/')
 
@@ -160,17 +163,17 @@ def delete_index(request):
 def show_index(request):
     indices_names = []
     res = []
-    for elem in esmodel.es.cat.indices(format="json"):
+    for elem in djesmodel.es.cat.indices(format="json"):
         indices_names.append(elem['index'])
     for i in indices_names:
-        ind = esmodel.es.search(index=i)
+        ind = djesmodel.es.search(index=i)
         res.append(ind["hits"]["hits"])
     messages.info(request, res)
     return redirect('/pictures/')
 
 
 def show_mapping(request):
-    res = esmodel.es.indices.get_mapping()
+    res = djesmodel.es.indices.get_mapping()
     messages.info(request, res)
     return redirect('/pictures/')
 
@@ -184,5 +187,7 @@ def show_log(request):
 
 def alien_index1(request):
     res = []
+    # TestAModel.es.create_index()
+    # res = TestAModel.es.reindex_all()
     messages.info(request, res)
     return redirect('/pictures/')
