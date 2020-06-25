@@ -4,26 +4,55 @@ from django.db import models
 from django.db.models import Model, TextField, ForeignKey
 
 from django_es.esmodel import EsModel
-from django_es_f.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
+from django_es_f.esfmodel import EsfModel
+# from django_es_f.esfmodel import EsfModel, EsTextField, EsForeignKey, EsBigIntegerField, \
+#     EsBinaryField, EsBooleanField, EsCharField, EsDateField, EsDateTimeField, EsDecimalField, EsDurationField, \
+#     EsEmailField, EsFilePathField, EsFloatField, EsIntegerField, EsUUIDField, EsURLField, EsTimeField, \
+#     EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \
+#     EsFileField, EsImageField, EsGenericIPAddressField, EsOneToOneField, EsManyToManyField
+
+from dj_es.djesmodel import DjesModel, EsTextField, EsForeignKey, EsBigIntegerField, \
     EsBinaryField, EsBooleanField, EsCharField, EsDateField, EsDateTimeField, EsDecimalField, EsDurationField, \
     EsEmailField, EsFilePathField, EsFloatField, EsIntegerField, EsUUIDField, EsURLField, EsTimeField, \
     EsSmallIntegerField, EsSlugField, EsPositiveSmallIntegerField, EsPositiveIntegerField, EsNullBooleanField, \
     EsFileField, EsImageField, EsGenericIPAddressField, EsOneToOneField, EsManyToManyField
+
+
 from django_elasticsearch.models import EsIndexable
 
 
-class TestFk(EsfModel):
+class TestFk(DjesModel):
     text = EsTextField(es_index=True, es_map={'type': 'text'})
 
 
-class TestModel(EsfModel):
-    name = EsTextField(es_index=True, es_map={'type': 'text'})
+class TestModel(DjesModel):
+    name = EsTextField(es_index=True, )
     fk = EsForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None,
                       es_index=True, es_map={'type': 'object'})
 
     class Meta:
-        es_index_name = "index_tm"
-        es_doc_type = "doc_type_tm"
+        index_using_fields = False
+        mappings = [
+            {
+                "es_index_name": "i_test",
+                "es_doc_type": "t_test",
+                "es_mapping": {
+                    "testmodel.name": {'type': 'text'},
+                    "testmodel.fk": {'type': 'object'},
+                    "testmodel.fk.text": {'type': 'text'},
+                },
+            },
+            {
+                "es_index_name": "ii_test",
+                "es_doc_type": "tt_test",
+                "es_mapping": {
+                    "testmodel": {'type': 'text'},
+                },
+            },
+        ]
+        # es_index_name = "index_tm"
+        # es_doc_type = "doc_type_tm"
+
 
 
 # Использование библиотек from django_elasticsearch.models import EsIndexable

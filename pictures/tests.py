@@ -1,10 +1,68 @@
 import time
-import unittest
+
+from django.test import TestCase
 from elasticsearch import Elasticsearch
-from pictures.models import Address, Person, Address2, Person2
+from pictures.models import Address, Person, Address2, Person2, TestModel, TestFk
 
 
-class EsModelTestCase(unittest.TestCase):
+class DjesModelTestCase(TestCase):
+    es = Elasticsearch(['localhost'])
+    test_fk = TestFk.objects.create(text='Some text')
+    test_m = TestModel.objects.create(name='Masha', fk=test_fk)
+    test_m._meta.mappings = [{
+        "es_index_name": "i_test",
+        "es_doc_type": "t_test",
+        "es_mapping": {
+            "testmodel.name": {'type': 'text'},
+            "testmodel.fk": {'type': 'object'},
+            "testmodel.fk.text": {'type': 'text'},
+        },
+    },
+        {
+            "es_index_name": "ii_test",
+            "es_doc_type": "tt_test",
+            "es_mapping": {
+                "testmodel.name": {'type': 'text'},
+            },
+        }, ]
+
+    def test_DjesModel_obj2es(self):
+        # проверка работы метода obj2es - экземпляр модели в соответствии с заданным мэппингом переводится в JSON
+        self.test_m._meta.es_mapping = self.test_m._meta.mappings[0].get("es_mapping")
+        o1 = self.test_m.obj2es()
+        self.test_m._meta.es_mapping = self.test_m._meta.mappings[1].get("es_mapping")
+        o2 = self.test_m.obj2es()
+        self.test_m._meta.index_using_fields = True
+        o3 = self.test_m.obj2es()
+
+        self.assertEqual(o1,
+                         '{"name": "Masha", "fk": {"text": "Some text"}}')
+        self.assertEqual(o2, '{"name": "Masha"}')
+        self.assertEqual(o3, '{"name": "Masha", "fk": {"text": "Some text"}}')
+
+    def test_DjesModel_mod2es(self):
+        # проверка работы метода mod2es - создает словарь маппинга в соответствии с
+        # переданными в "es_mapping" значениями
+        self.test_m._meta.es_mapping = self.test_m._meta.mappings[0].get("es_mapping")
+        TestModel._meta.es_mapping = TestModel._meta.mappings[0].get("es_mapping")
+        m1 = TestModel.mod2es(TestModel)
+        TestModel._meta.es_mapping = TestModel._meta.mappings[1].get("es_mapping")
+        m2 = TestModel.mod2es(TestModel)
+        self.test_m._meta.index_using_fields = True
+        m3 = TestModel.mod2es(TestModel)
+
+        self.assertEqual(m1,
+                         '{"name": {"type": "text"}, '
+                         '"fk": {"type": "object", "properties": {'
+                         '"text": {"type": "text"}}}}')
+        self.assertEqual(m2, '{"name": {"type": "text"}}')
+        self.assertEqual(m3,
+                         '{"name": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}, '
+                         '"fk": {"type": "object", "properties": {'
+                         '"text": {"type": "text"}}}}')
+
+
+class EsModelTestCase(TestCase):
     es = Elasticsearch(['localhost'])
 
     test_address = Address.objects.create(country='Russia', city='Moscow', street='Tverskaya street',
@@ -173,7 +231,7 @@ class EsModelTestCase(unittest.TestCase):
         self.assertDictEqual(res3['hits']['hits'][0].get("_source"), {})
 
 
-class EsfModelTestCase(unittest.TestCase):
+class EsfModelTestCase(TestCase):
     es = Elasticsearch(['localhost'])
     test_address = Address2.objects.create(country='Russia', city='Moscow', street='Tverskaya street',
                                            house='house 5')
