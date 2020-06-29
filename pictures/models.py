@@ -50,7 +50,7 @@ class TestModel(DjesModel):
                 "es_index_name": "ii_test",
                 "es_doc_type": "tt_test",
                 "es_mapping": {
-                    "testmodel": {'type': 'text'},
+                    "testmodel.name": {'type': 'date'},
                 },
             },
         ]
@@ -345,31 +345,31 @@ class Picture(DjesModel):
         ]
 
 
-# class TestAFk(DjesModel):
-#     text = TextField()
-#
-#
-# class TestAModel(DjesModel):
-#     name = TextField()
-#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
-#     em = ElasticsearchManager()
-#
-#     class es(EsIndexable.Elasticsearch):
-#         fields = ['name', 'fk']
-#         mappings = {'name': {'type': 'text'},
-#                     'fk': {'type': 'object'}}
-#
-#
-#     # class El(EsIndexable.Elasticsearch):
-#     #     index = 'TA'
-#     #     doc_type = 'TA'
-#     #     fields = {'fk'}
-#
-#
-# class TestBFk(DjesModel):
-#     text = TextField()
-#
-#
-# class TestBModel(DjesModel):
-#     name = TextField()
-#     fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
+class TestAFk(DjesModel):
+    text = TextField()
+
+
+class TestAModel(DjesModel):
+    name = TextField()
+    fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    # em = ElasticsearchManager()
+    #
+    # class es(EsIndexable.Elasticsearch):
+    #     fields = ['name', 'fk']
+    #     mappings = {'name': {'type': 'text'},
+    #                 'fk': {'type': 'object'}}
+
+
+    # class El(EsIndexable.Elasticsearch):
+    #     index = 'TA'
+    #     doc_type = 'TA'
+    #     fields = {'fk'}
+
+
+class TestBFk(DjesModel):
+    text = TextField()
+
+
+class TestBModel(DjesModel):
+    name = TextField()
+    fk = ForeignKey(TestFk, on_delete=models.CASCADE, null=True, blank=True, default=None)

@@ -101,7 +101,6 @@ def pictures_search(request):
     pres = []
     for hit in latest_list['hits']['hits']:
         pres.append(int(hit["_id"]))
-        print(int(hit["_id"]))
     res = Picture.objects.filter(id__in=pres)
     return render(request, 'search.html', {'res': res})
 

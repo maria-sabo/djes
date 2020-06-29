@@ -170,8 +170,6 @@ class DjesModel(Model):
         index_using_fields = False
 
         es_mapping = collections.OrderedDict()
-        es_index_name = ""
-        es_doc_type = ""
         es_path = ""
 
     @classmethod
@@ -189,22 +187,6 @@ class DjesModel(Model):
     @classmethod
     def set_es_mapping(cls, es_mapping):
         cls._meta.es_mapping = es_mapping
-
-    @classmethod
-    def get_es_index_name(cls):
-        return cls._meta.es_index_name
-
-    @classmethod
-    def set_es_index_name(cls, es_index_name):
-        cls._meta.es_index_name = es_index_name
-
-    @classmethod
-    def get_es_doc_type(cls):
-        return cls._meta.es_doc_type
-
-    @classmethod
-    def set_es_doc_type(cls, es_doc_type):
-        cls._meta.es_doc_type = es_doc_type
 
     @classmethod
     def get_es_path(cls):
@@ -333,7 +315,6 @@ class DjesModel(Model):
     @classmethod
     def map_dict_from_fields(cls, obj):
         d = {}
-        # if hasattr(obj, "_meta") and hasattr(obj._meta, "es_index_name"):
         fields = obj._meta.get_fields()
         for field in fields:
             if hasattr(field, "es_index") and hasattr(field, "es_map"):
@@ -462,4 +443,5 @@ class DjesModel(Model):
 
     @receiver(post_delete)
     def es_delete(sender, instance, **kwargs):
-        sender.del_document(instance, es)
+        if isinstance(sender, DjesModel) and hasattr(sender, "_meta") and hasattr(sender._meta, "es_mapping"):
+            sender.del_document(instance, es)
