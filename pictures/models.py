@@ -21,6 +21,8 @@ from dj_es.djesmodel import DjesModel, EsTextField, EsForeignKey, EsBigIntegerFi
 from django_elasticsearch.models import EsIndexable
 
 from django_elasticsearch import managers
+
+
 class TestFk(DjesModel):
     text = EsTextField(es_index=True, es_map={'type': 'text'})
     # text = TextField()
@@ -358,7 +360,6 @@ class TestAModel(DjesModel):
     #     fields = ['name', 'fk']
     #     mappings = {'name': {'type': 'text'},
     #                 'fk': {'type': 'object'}}
-
 
     # class El(EsIndexable.Elasticsearch):
     #     index = 'TA'

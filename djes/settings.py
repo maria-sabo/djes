@@ -25,6 +25,7 @@ SECRET_KEY = '(x-opokwtu3&kuhdz@cxnz1qavvn-x#d%p15gi@4(ou9@ino9c'
 DEBUG = True
 ELASTICSEARCH_AUTO_INDEX = False
 ALLOWED_HOSTS = []
+CONNECTION_ES = {'host': 'localhost', 'port': 9200}
 
 # Application definition
 

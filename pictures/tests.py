@@ -8,7 +8,7 @@ from pictures.models import Address, Person, Address2, Person2, TestModel, TestF
 class DjesModelTestCase(TestCase):
     es = Elasticsearch(['localhost'])
     test_fk = TestFk.objects.create(text='Some text')
-    test_m = TestModel.objects.create(name='Masha', fk=test_fk)
+    test_m = TestModel.objects.create(name='Masha ', fk=test_fk)
     test_m._meta.mappings = [{
         "es_index_name": "i_test",
         "es_doc_type": "t_test",
@@ -71,19 +71,19 @@ class DjesModelTestCase(TestCase):
     def test_DjesModel_create_indices_for_model_with_mapping(self):
         # проверка создания индексов на модель Person, используя маппинг
         TestModel.create_indices_for_model(TestModel, True, self.es)
-        time.sleep(1)
+        #time.sleep(1)
         # передаем ES документ
         TestModel.put_document(self.test_m, self.es)
-        time.sleep(1)
+        #time.sleep(1)
         map1 = self.es.indices.get_mapping(index='i_test')
-        time.sleep(1)
+        #time.sleep(1)
         map2 = self.es.indices.get_mapping(index='ii_test')
-        time.sleep(1)
+        #time.sleep(1)
 
         res1 = self.es.search(index='i_test')
-        time.sleep(1)
+        #time.sleep(1)
         res2 = self.es.search(index='ii_test')
-        time.sleep(1)
+        #time.sleep(1)
 
         self.assertDictEqual(map1, {'i_test': {'mappings': {'properties':
                                                                 {'fk': {'properties':
@@ -93,11 +93,6 @@ class DjesModelTestCase(TestCase):
                                                     {'properties':
                                                          {'name':
                                                               {'type': 'text', }}}}})
-        # self.assertDictEqual(res1['hits']['hits'][0].get("_source"),
-        #                      {'name': 'Masha', 'fk': {'text': 'Some text'}})
-        #
-        # self.assertDictEqual(res2['hits']['hits'][0].get("_source"),
-        #                      {'name': 'Masha'})
 
 
 class EsModelTestCase(TestCase):
@@ -174,15 +169,15 @@ class EsModelTestCase(TestCase):
 
     def test_EsModel_create_indices_for_model_with_mapping(self):
         # проверка создания индексов на модель Person, используя маппинг
-        Person.create_indices_for_model(Person, True, True, self.es)
-        time.sleep(1)
+        Person.create_indices_for_model(Person, True, self.es)
+        # time.sleep(1)
         # передаем ES документы
         Person.put_document(self.test_person, self.es)
-        time.sleep(1)
+        # time.sleep(1)
         map1 = self.es.indices.get_mapping(index='i_person')
-        time.sleep(1)
+        # time.sleep(1)
         map2 = self.es.indices.get_mapping(index='ii_person')
-        time.sleep(1)
+        # time.sleep(1)
         map3 = self.es.indices.get_mapping(index='iii_person')
         time.sleep(1)
 

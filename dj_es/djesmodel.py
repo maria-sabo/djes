@@ -1,4 +1,6 @@
 import base64, datetime, decimal, json, logging, collections
+
+from django.conf import settings
 from django.db.models import Model, ManyToManyField, QuerySet, ManyToOneRel
 
 from django.contrib.contenttypes.models import ContentType
@@ -146,8 +148,9 @@ def get_model_from_name(name):
     return ct.model_class()
 
 
-def connect_es():
-    _es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+# {'host': 'localhost', 'port': 9200}
+def connect_es(connection_es):
+    _es = Elasticsearch([connection_es])
     try:
         if _es.ping():
             logging.info('Connect ES')
@@ -160,7 +163,7 @@ def connect_es():
         raise SystemExit
 
 
-es = connect_es()
+es = connect_es(getattr(settings, 'CONNECTION_ES'))
 
 
 class DjesModel(Model):
